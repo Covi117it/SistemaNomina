@@ -1,0 +1,24 @@
+# Frontend & Node
+**/node_modules/
+**/dist/
+**/dist-ssr/
+**/.vite/
+*.local
+
+# .NET Backend
+**/bin/
+**/obj/
+*.db
+*.db-shm
+*.db-wal
+appsettings.Development.json
+
+# Rust & Tauri
+**/src-tauri/target/
+**/src-tauri/gen/
+
+# Sistema y Editores
+.DS_Store
+.vscode/
+*.user
+*.suo
