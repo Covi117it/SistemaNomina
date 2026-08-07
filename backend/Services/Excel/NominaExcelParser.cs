@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using ExcelDataReader;
 using backend.DTOs;
@@ -68,10 +70,6 @@ namespace backend.Services.Excel
                         NetoAPagar = ExcelHelper.ObtenerValorDecimal(reader, colMap, "NETO A PAGAR", "NETO_A_PAGAR", "NETO")
                     };
 
-                    if (item.NetoAPagar == 0 && (item.TotalDevengado > 0 || item.TotalDeducciones > 0))
-                    {
-                        item.NetoAPagar = item.TotalDevengado - item.TotalDeducciones;
-                    }
                     listaNomina.Add(item);
                 }
             }

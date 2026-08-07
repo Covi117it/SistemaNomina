@@ -10,7 +10,7 @@ interface PayrollUploadBoxProps {
 export const PayrollUploadBox: React.FC<PayrollUploadBoxProps> = ({ onFileUpload, loading }) => {
   return (
     <div className="bg-white border border-slate-200/80 rounded-2xl p-10 text-center shadow-sm space-y-4">
-      <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto border border-emerald-100">
+      <div className="w-16 h-16 bg-[#e6f7ef] text-[#0d784a] rounded-2xl flex items-center justify-center mx-auto border border-[#bcecd4]">
         <Calculator className="w-8 h-8" />
       </div>
       <div>

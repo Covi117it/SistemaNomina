@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Server } from 'lucide-react';
 import axios from 'axios';
+import { ENDPOINTS } from '../../config/api';
 
 interface SmtpConfigModalProps {
   isOpen: boolean;
@@ -21,7 +22,7 @@ export const SmtpConfigModal: React.FC<SmtpConfigModalProps> = ({ isOpen, onClos
 
   useEffect(() => {
     if (isOpen) {
-      axios.get('http://localhost:5289/api/config/smtp')
+      axios.get(`${ENDPOINTS.CONFIG}/smtp`)
         .then((res) => {
           if (res.data) {
             setSmtpConfig({
@@ -41,7 +42,7 @@ export const SmtpConfigModal: React.FC<SmtpConfigModalProps> = ({ isOpen, onClos
   const handleSave = async () => {
     setSaving(true);
     try {
-      await axios.post('http://localhost:5289/api/config/smtp', smtpConfig);
+      await axios.post(`${ENDPOINTS.CONFIG}/smtp`, smtpConfig);
       if (onSaved) onSaved();
       onClose();
     } catch (err) {

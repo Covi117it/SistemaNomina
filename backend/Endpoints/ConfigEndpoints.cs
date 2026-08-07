@@ -1,6 +1,7 @@
 using backend.Data;
 using backend.DTOs;
 using backend.Models;
+using backend.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace backend.Endpoints
@@ -12,7 +13,7 @@ namespace backend.Endpoints
             var group = app.MapGroup("/api/config")
                            .WithTags("Configuración del Sistema");
 
-            group.MapGet("/smtp", async (AppDbContext db) =>
+            group.MapGet("/smtp", async (AppDbContext db, ICryptoService cryptoService) =>
             {
                 var config = await db.Configuraciones.FirstOrDefaultAsync();
                 if (config == null)
@@ -22,6 +23,9 @@ namespace backend.Endpoints
                     await db.SaveChangesAsync();
                 }
 
+                // Descifrar la contraseña almacenada de forma segura
+                string decryptedPassword = cryptoService.Decrypt(config.SmtpPassword ?? "");
+
                 return Results.Ok(new SmtpSettings
                 {
                     Server = config.SmtpServer,
@@ -29,13 +33,13 @@ namespace backend.Endpoints
                     SenderName = config.SmtpSenderName,
                     SenderEmail = config.SmtpSenderEmail,
                     Username = config.SmtpUsername,
-                    Password = config.SmtpPassword,
+                    Password = decryptedPassword,
                     EnableSsl = config.SmtpEnableSsl
                 });
             })
             .WithSummary("Obtiene la configuración del servidor SMTP guardada en la base de datos.");
 
-            group.MapPost("/smtp", async (SmtpSettings dto, AppDbContext db) =>
+            group.MapPost("/smtp", async (SmtpSettings dto, AppDbContext db, ICryptoService cryptoService) =>
             {
                 var config = await db.Configuraciones.FirstOrDefaultAsync();
                 if (config == null)
@@ -49,12 +53,14 @@ namespace backend.Endpoints
                 config.SmtpSenderName = string.IsNullOrWhiteSpace(dto.SenderName) ? "Nómina Enfoco Institucional" : dto.SenderName.Trim();
                 config.SmtpSenderEmail = dto.SenderEmail?.Trim() ?? "";
                 config.SmtpUsername = string.IsNullOrWhiteSpace(dto.Username) ? (dto.SenderEmail?.Trim() ?? "") : dto.Username.Trim();
-                config.SmtpPassword = dto.Password?.Trim() ?? "";
+                
+                // Cifrar la contraseña SMTP antes de persistir en la base de datos
+                config.SmtpPassword = string.IsNullOrWhiteSpace(dto.Password) ? "" : cryptoService.Encrypt(dto.Password.Trim());
                 config.SmtpEnableSsl = dto.EnableSsl;
 
                 await db.SaveChangesAsync();
 
-                return Results.Ok(new { mensaje = "Configuración SMTP guardada exitosamente en la base de datos." });
+                return Results.Ok(new { mensaje = "Configuración SMTP guardada exitosamente en la base de datos de forma cifrada." });
             })
             .WithSummary("Guarda o actualiza la configuración del servidor SMTP en la base de datos.");
 

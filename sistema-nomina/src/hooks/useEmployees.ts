@@ -1,63 +1,111 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
 import Swal from 'sweetalert2';
 import { Empleado } from '../types/empleado';
-import { PreviewNominaResponse, NominaItem } from '../types/nomina';
-
-const API_BASE_URL = 'http://localhost:5289/api/empleados';
-const API_NOMINA_URL = 'http://localhost:5289/api/nomina';
+import { employeeApi } from '../service/api/employeeApi';
 
 export const useEmployees = () => {
   const [dbEmployees, setDbEmployees] = useState<Empleado[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
-  const [isSaving, setIsSaving] = useState<boolean>(false);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<'TODOS' | 'ACTIVO' | 'INACTIVO'>('TODOS');
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [updatingCodigo, setUpdatingCodigo] = useState<string | null>(null);
 
-  const [previewNominaData, setPreviewNominaData] = useState<PreviewNominaResponse | null>(null);
-  const [isPayrollStagingMode, setIsPayrollStagingMode] = useState<boolean>(false);
-
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [modalMode] = useState<'create' | 'edit'>('create');
   const [selectedEmpleado, setSelectedEmpleado] = useState<Empleado | null>(null);
-
-  useEffect(() => {
-    fetchDbEmployees();
-  }, []);
 
   const showNotification = (message: string, type: 'success' | 'error') => {
     setNotification({ message, type });
   };
 
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(10);
+  const [totalPages, setTotalPages] = useState<number>(1);
+  const [totalTotal, setTotalTotal] = useState<number>(0);
+  const [totalActivos, setTotalActivos] = useState<number>(0);
+  const [totalInactivos, setTotalInactivos] = useState<number>(0);
+  const [totalFiltrados, setTotalFiltrados] = useState<number>(0);
+
   const fetchDbEmployees = async () => {
     setLoading(true);
     try {
-      const res = await axios.get<Empleado[]>(API_BASE_URL);
-      setDbEmployees(res.data);
+      const data = await employeeApi.fetchEmployees(searchTerm, statusFilter, currentPage, pageSize);
+      let list: Empleado[] = [];
+      let tot = 0;
+      let act = 0;
+      let inact = 0;
+      let filt = 0;
+      let pages = 1;
+
+      if (Array.isArray(data)) {
+        list = data;
+        act = list.filter((e) => e.eStatus === 'ACTIVO').length;
+        inact = list.filter((e) => e.eStatus === 'INACTIVO').length;
+        tot = act + inact;
+        filt = list.length;
+        pages = Math.ceil(filt / pageSize) || 1;
+      } else if (data && typeof data === 'object') {
+        list = data.empleados || [];
+        act = data.totalActivos ?? 0;
+        inact = data.totalInactivos ?? 0;
+        tot = data.totalTotal ?? (act + inact);
+        filt = data.totalFiltrados ?? list.length;
+        pages = data.totalPages ?? (Math.ceil(filt / pageSize) || 1);
+      }
+
+      setDbEmployees(list);
+      setTotalTotal(tot);
+      setTotalActivos(act);
+      setTotalInactivos(inact);
+      setTotalFiltrados(filt);
+      setTotalPages(pages);
     } catch (err) {
+      console.error('Error cargando empleados:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSaveModalEmpleado = async (empleado: Empleado) => {
-    if (modalMode === 'edit' || selectedEmpleado) {
-      await axios.put(`${API_BASE_URL}/${empleado.codigo}`, empleado);
-      showNotification(`Empleado '${empleado.nombres}' actualizado exitosamente.`, 'success');
-    } else {
-      await axios.post(API_BASE_URL, empleado);
-      showNotification(`Empleado '${empleado.nombres}' creado exitosamente.`, 'success');
-    }
+  useEffect(() => {
     fetchDbEmployees();
+  }, [searchTerm, statusFilter, currentPage, pageSize]);
+
+  // Al cambiar filtros o búsquedas, volver a la página 1
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter]);
+
+  const handleSaveModalEmpleado = async (empleado: Empleado, isEdit: boolean = false) => {
+    try {
+      if (isEdit || (selectedEmpleado && selectedEmpleado.codigo === empleado.codigo)) {
+        await employeeApi.updateEmployee(empleado.codigo, empleado);
+        showNotification(`Empleado '${empleado.nombres}' actualizado exitosamente.`, 'success');
+      } else {
+        await employeeApi.createEmployee(empleado);
+        showNotification(`Empleado '${empleado.nombres}' creado exitosamente.`, 'success');
+      }
+      fetchDbEmployees();
+    } catch (err: any) {
+      const msg = err.response?.data?.mensaje || err.message || 'Error al guardar el empleado.';
+      Swal.fire({
+        title: 'No se pudo guardar',
+        text: msg,
+        icon: 'error',
+        confirmButtonColor: '#10b981',
+        customClass: {
+          popup: 'rounded-2xl shadow-2xl border border-slate-200 font-sans',
+        },
+      });
+      throw err;
+    }
   };
 
   const handleEstatusChange = async (empleado: Empleado, nuevoEstatus: string) => {
     const empleadoActualizado = { ...empleado, eStatus: nuevoEstatus };
     setUpdatingCodigo(empleado.codigo);
     try {
-      await axios.put(`${API_BASE_URL}/${empleado.codigo}`, empleadoActualizado);
+      await employeeApi.updateEmployee(empleado.codigo, empleadoActualizado);
       setDbEmployees((prev) =>
         prev.map((item) => (item.codigo === empleado.codigo ? empleadoActualizado : item))
       );
@@ -85,7 +133,7 @@ export const useEmployees = () => {
       if (result.isConfirmed) {
         setLoading(true);
         try {
-          await axios.delete(`${API_BASE_URL}/${codigo}`);
+          await employeeApi.deleteEmployee(codigo);
           fetchDbEmployees();
         } catch (err) {
         } finally {
@@ -95,97 +143,9 @@ export const useEmployees = () => {
     });
   };
 
-  const handleFileUpload = async (file: File) => {
-    const formData = new FormData();
-    formData.append('file', file);
-
-    setLoading(true);
-    try {
-      const res = await axios.post<PreviewNominaResponse>(`${API_NOMINA_URL}/preview-quincena`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      setPreviewNominaData(res.data);
-      setIsPayrollStagingMode(true);
-    } catch (err: any) {
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleUpdatePayrollItem = (index: number, field: keyof NominaItem, value: any) => {
-    if (!previewNominaData) return;
-
-    const updatedItems = [...previewNominaData.items];
-    const item = { ...updatedItems[index], [field]: value };
-
-    if (field === 'totalDevengado' || field === 'totalDeducciones') {
-      item.netoAPagar = (item.totalDevengado || 0) - (item.totalDeducciones || 0);
-    }
-
-    updatedItems[index] = item;
-
-    const newTotalDevengado = updatedItems.reduce((acc, i) => acc + (i.totalDevengado || 0), 0);
-    const newTotalDeducciones = updatedItems.reduce((acc, i) => acc + (i.totalDeducciones || 0), 0);
-    const newTotalNeto = updatedItems.reduce((acc, i) => acc + (i.netoAPagar || 0), 0);
-
-    setPreviewNominaData({
-      ...previewNominaData,
-      resumenTotales: {
-        totalDevengado: newTotalDevengado,
-        totalDeducciones: newTotalDeducciones,
-        totalNeto: newTotalNeto,
-      },
-      items: updatedItems,
-    });
-  };
-
-  const handleConfirmSavePayroll = async (quincena?: string, mes?: number) => {
-    if (!previewNominaData || previewNominaData.items.length === 0) return;
-    const hoy = new Date();
-    const mesActual = mes || (hoy.getMonth() + 1);
-    const quincenaActual = quincena || (hoy.getDate() <= 15 ? '1Q' : '2Q');
-    const conceptoActual = `Nómina Quincenal ${quincenaActual} - Mes ${mesActual}`;
-    setIsSaving(true);
-    try {
-      await axios.post(
-        `${API_NOMINA_URL}/procesar-quincena?mes=${mesActual}&quincena=${quincenaActual}&concepto=${encodeURIComponent(conceptoActual)}`,
-        previewNominaData.items
-      );
-      showNotification(`Nómina ${quincenaActual} (Mes ${mesActual}) guardada en el histórico con éxito.`, 'success');
-      
-      // <-- AGREGAR ESTAS DOS LÍNEAS AQUÍ:
-      setIsPayrollStagingMode(false);
-      setPreviewNominaData(null);
-    } catch (err: any) {
-      showNotification('Error al guardar la quincena en el histórico.', 'error');
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-
-  // BÚSQUEDA Y FILTRADO LOCAL POR ESTATUS (Sin tocar la BD masivamente)
-  const filteredEmployees = dbEmployees.filter((emp) => {
-    const matchesSearch =
-      emp.codigo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      emp.nombres.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (emp.puesto && emp.puesto.toLowerCase().includes(searchTerm.toLowerCase()));
-
-    const matchesStatus = statusFilter === 'TODOS' || emp.eStatus === statusFilter;
-
-    return matchesSearch && matchesStatus;
-  });
-
-  const totalActivos = dbEmployees.filter((e) => e.eStatus === 'ACTIVO').length;
-  const totalInactivos = dbEmployees.filter((e) => e.eStatus === 'INACTIVO').length;
-
   return {
     dbEmployees,
-    filteredEmployees,
-    previewNominaData,
-    isPayrollStagingMode,
     loading,
-    isSaving,
     searchTerm,
     setSearchTerm,
     statusFilter,
@@ -198,16 +158,18 @@ export const useEmployees = () => {
     modalMode,
     selectedEmpleado,
     setSelectedEmpleado,
+    totalTotal,
     totalActivos,
     totalInactivos,
+    totalFiltrados,
+    currentPage,
+    setCurrentPage,
+    pageSize,
+    setPageSize,
+    totalPages,
     fetchDbEmployees,
     handleSaveModalEmpleado,
     handleEstatusChange,
     handleDeleteIndividualEmpleado,
-    handleFileUpload,
-    handleUpdatePayrollItem,
-    handleConfirmSavePayroll,
-    setIsPayrollStagingMode,
-    setPreviewNominaData,
   };
 };

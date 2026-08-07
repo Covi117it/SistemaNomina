@@ -6,6 +6,7 @@ interface PageHeaderProps {
   subtitle?: string;
   icon?: React.ReactNode;
   onBack?: () => void;
+  leftActions?: React.ReactNode;
   actions?: React.ReactNode;
 }
 
@@ -14,11 +15,13 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
   subtitle,
   icon,
   onBack,
+  leftActions,
   actions,
 }) => {
   return (
     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pb-4">
       <div className="flex items-center gap-3">
+        {leftActions}
         {onBack && (
           <button
             type="button"

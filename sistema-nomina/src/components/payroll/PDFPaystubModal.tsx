@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { X, Download, FileText, Loader2, Printer } from 'lucide-react';
 import { NominaItem } from '../../types/nomina';
+import { ENDPOINTS } from '../../config/api';
 
 interface PDFPaystubModalProps {
   isOpen: boolean;
@@ -14,7 +15,7 @@ export const PDFPaystubModal: React.FC<PDFPaystubModalProps> = ({
   isOpen,
   onClose,
   item,
-  conceptoPeriodo = 'Primera Quincena de Enero 2026',
+  conceptoPeriodo = '',
 }) => {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
@@ -38,7 +39,7 @@ export const PDFPaystubModal: React.FC<PDFPaystubModalProps> = ({
 
     try {
       const response = await axios.post(
-        `http://localhost:5289/api/nomina/generar-volante-pdf?conceptoPeriodo=${encodeURIComponent(conceptoPeriodo)}`,
+        `${ENDPOINTS.NOMINA}/generar-volante-pdf?conceptoPeriodo=${encodeURIComponent(conceptoPeriodo)}`, 
         item,
         { responseType: 'blob' }
       );

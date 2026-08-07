@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Search, CheckCircle2, FileText } from 'lucide-react';
+import { ArrowLeft, Search, CheckCircle2, FileText, Mail, Loader2 } from 'lucide-react';
 import { NominaItem } from '../../types/nomina';
+import { usePaystubEmailDispatcher } from '../../hooks/usePaystubEmailDispatcher';
 
 interface PayrollHistoryDetailProps {
   period: any;
@@ -14,6 +15,7 @@ export const PayrollHistoryDetail: React.FC<PayrollHistoryDetailProps> = ({
   onSelectPdfItem,
 }) => {
   const [detailSearchTerm, setDetailSearchTerm] = useState<string>('');
+  const { sendingId, sentIds, sendSingleEmail } = usePaystubEmailDispatcher();
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-DO', {
@@ -21,6 +23,32 @@ export const PayrollHistoryDetail: React.FC<PayrollHistoryDetailProps> = ({
       currency: 'DOP',
       minimumFractionDigits: 2,
     }).format(amount || 0);
+  };
+
+  const handleSendSingleEmail = async (det: any) => {
+    const itemToDispatch: NominaItem = {
+      codigoEmpleado: det.codigoEmpleado,
+      nombreEmpleado: det.nombreEmpleadoSnapshot,
+      sueldoBase: det.sueldoPeriodo || 0,
+      quincena: period.quincena || '1Q',
+      incentivo: det.incentivo || 0,
+      reembolso: det.reembolso || 0,
+      horasExtras: det.horasExtras || 0,
+      prestamo: det.prestamo || 0,
+      cuotaCumpleanos: det.cuotaCumpleanos || 0,
+      seguroVehiculo: det.seguroVehiculo || 0,
+      seguroMedico: det.seguroMedico || 0,
+      sfs: det.sfs || 0,
+      afp: det.afp || 0,
+      isr: det.isr || 0,
+      totalDevengado: det.totalDevengado || 0,
+      totalDeducciones: det.totalDeducciones || 0,
+      netoAPagar: det.netoPagado || 0,
+      emailDestinatario: det.emailDestinatario,
+      empleadoExiste: true,
+    };
+
+    await sendSingleEmail(det.id, itemToDispatch, period.concepto);
   };
 
   const filteredDetalles = period.detalles?.filter((det: any) => {
@@ -35,7 +63,6 @@ export const PayrollHistoryDetail: React.FC<PayrollHistoryDetailProps> = ({
 
   return (
     <div className="space-y-6 animate-in fade-in">
-      {/* Topbar de la Pantalla Completa */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
         <div className="flex items-center gap-3">
           <button
@@ -111,58 +138,91 @@ export const PayrollHistoryDetail: React.FC<PayrollHistoryDetailProps> = ({
                 <th className="p-3 text-right">Total Devengado</th>
                 <th className="p-3 text-right">Total Deducciones</th>
                 <th className="p-3 text-right">Neto a Pagar</th>
-                <th className="p-3 text-center">Volante PDF</th>
+                <th className="p-3 text-center">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y">
-              {filteredDetalles?.map((det: any) => (
-                <tr key={det.id} className="hover:bg-slate-50">
-                  <td className="p-3">
-                    <span className="px-2.5 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded-full border border-emerald-200 flex items-center gap-1 w-fit">
-                      <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                      Registrado
-                    </span>
-                  </td>
-                  <td className="p-3 font-mono font-bold text-emerald-600">{det.codigoEmpleado}</td>
-                  <td className="p-3 font-bold text-slate-900">{det.nombreEmpleadoSnapshot}</td>
-                  <td className="p-3 text-slate-500 font-mono">{det.emailDestinatario || 'N/A'}</td>
-                  <td className="p-3 text-right font-mono">{formatCurrency(det.sueldoPeriodo)}</td>
-                  <td className="p-3 text-right font-mono font-bold text-slate-800">{formatCurrency(det.totalDevengado)}</td>
-                  <td className="p-3 text-right font-mono text-slate-600">{formatCurrency(det.totalDeducciones)}</td>
-                  <td className="p-3 text-right font-mono font-bold text-emerald-700">{formatCurrency(det.netoPagado)}</td>
-                  <td className="p-3 text-center">
-                    <button
-                      onClick={() =>
-                        onSelectPdfItem({
-                          codigoEmpleado: det.codigoEmpleado,
-                          nombreEmpleado: det.nombreEmpleadoSnapshot,
-                          sueldoBase: det.sueldoPeriodo,
-                          quincena: period.quincena,
-                          incentivo: det.incentivo,
-                          reembolso: det.reembolso,
-                          horasExtras: det.horasExtras,
-                          prestamo: det.prestamo,
-                          cuotaCumpleanos: det.cuotaCumpleanos,
-                          seguroVehiculo: det.seguroVehiculo,
-                          seguroMedico: det.seguroMedico,
-                          sfs: det.sfs,
-                          afp: det.afp,
-                          isr: det.isr,
-                          totalDevengado: det.totalDevengado,
-                          totalDeducciones: det.totalDeducciones,
-                          netoAPagar: det.netoPagado,
-                          emailDestinatario: det.emailDestinatario,
-                          empleadoExiste: true,
-                        })
-                      }
-                      className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold rounded-lg transition-colors flex items-center gap-1 mx-auto cursor-pointer border border-emerald-200"
-                    >
-                      <FileText className="w-3.5 h-3.5 text-emerald-600" />
-                      PDF
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {filteredDetalles?.map((det: any) => {
+                const isSending = sendingId === det.id;
+                const isSent = sentIds.has(det.id);
+
+                return (
+                  <tr key={det.id} className="hover:bg-slate-50">
+                    <td className="p-3">
+                      <span className="px-2.5 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded-full border border-emerald-200 flex items-center gap-1 w-fit">
+                        <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                        Registrado
+                      </span>
+                    </td>
+                    <td className="p-3 font-mono font-bold text-emerald-600">{det.codigoEmpleado}</td>
+                    <td className="p-3 font-bold text-slate-900">{det.nombreEmpleadoSnapshot}</td>
+                    <td className="p-3 text-slate-500 font-mono">{det.emailDestinatario || 'N/A'}</td>
+                    <td className="p-3 text-right font-mono">{formatCurrency(det.sueldoPeriodo)}</td>
+                    <td className="p-3 text-right font-mono font-bold text-slate-800">{formatCurrency(det.totalDevengado)}</td>
+                    <td className="p-3 text-right font-mono text-slate-600">{formatCurrency(det.totalDeducciones)}</td>
+                    <td className="p-3 text-right font-mono font-bold text-emerald-700">{formatCurrency(det.netoPagado)}</td>
+                    <td className="p-3 text-center">
+                      <div className="flex items-center justify-center gap-1.5">
+                        <button
+                          onClick={() =>
+                            onSelectPdfItem({
+                              codigoEmpleado: det.codigoEmpleado,
+                              nombreEmpleado: det.nombreEmpleadoSnapshot,
+                              sueldoBase: det.sueldoPeriodo,
+                              quincena: period.quincena,
+                              incentivo: det.incentivo || 0,
+                              reembolso: det.reembolso || 0,
+                              horasExtras: det.horasExtras || 0,
+                              prestamo: det.prestamo || 0,
+                              cuotaCumpleanos: det.cuotaCumpleanos || 0,
+                              seguroVehiculo: det.seguroVehiculo || 0,
+                              seguroMedico: det.seguroMedico || 0,
+                              sfs: det.sfs || 0,
+                              afp: det.afp || 0,
+                              isr: det.isr || 0,
+                              totalDevengado: det.totalDevengado,
+                              totalDeducciones: det.totalDeducciones,
+                              netoAPagar: det.netoPagado,
+                              emailDestinatario: det.emailDestinatario,
+                              empleadoExiste: true,
+                            })
+                          }
+                          className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold rounded-lg transition-colors flex items-center gap-1 cursor-pointer border border-emerald-200"
+                          title="Ver volante PDF"
+                        >
+                          <FileText className="w-3.5 h-3.5 text-emerald-600" />
+                          PDF
+                        </button>
+
+                        <button
+                          onClick={() => handleSendSingleEmail(det)}
+                          disabled={isSending || !det.emailDestinatario}
+                          className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all flex items-center gap-1 cursor-pointer border shadow-xs disabled:opacity-50 ${
+                            isSent
+                              ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                              : 'bg-emerald-500 hover:bg-emerald-600 text-white border-emerald-600'
+                          }`}
+                          title="Reenviar comprobante por correo a este empleado"
+                        >
+                          {isSending ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin mx-auto" />
+                          ) : isSent ? (
+                            <>
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
+                              Enviado
+                            </>
+                          ) : (
+                            <>
+                              <Mail className="w-3.5 h-3.5" />
+                              Enviar
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

@@ -1,6 +1,7 @@
 import React from 'react';
-import { RefreshCw, Filter } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import { SearchInput } from '../common/SearchInput';
+import { PillFilterGroup, PillOption } from '../common/PillFilterGroup';
 
 interface EmployeeToolbarProps {
   searchTerm: string;
@@ -9,6 +10,9 @@ interface EmployeeToolbarProps {
   onStatusFilterChange: (status: 'TODOS' | 'ACTIVO' | 'INACTIVO') => void;
   onRefresh: () => void;
   loading: boolean;
+  total?: number;
+  activos?: number;
+  inactivos?: number;
 }
 
 export const EmployeeToolbar: React.FC<EmployeeToolbarProps> = ({
@@ -18,45 +22,44 @@ export const EmployeeToolbar: React.FC<EmployeeToolbarProps> = ({
   onStatusFilterChange,
   onRefresh,
   loading,
+  total,
+  activos,
+  inactivos,
 }) => {
+  const filterOptions: PillOption<'TODOS' | 'ACTIVO' | 'INACTIVO'>[] = [
+    { key: 'TODOS', label: 'Todos', count: total },
+    { key: 'ACTIVO', label: 'Activos', count: activos },
+    { key: 'INACTIVO', label: 'Inactivos', count: inactivos },
+  ];
+
   return (
-    <div className="bg-white border border-slate-200/80 rounded-2xl p-4 flex flex-col md:flex-row items-center justify-between gap-4 shadow-sm">
-      <SearchInput
-        value={searchTerm}
-        onChange={onSearchChange}
-        placeholder="Buscar empleado por nombre, cédula, código, puesto..."
-      />
-      <div className="flex items-center gap-2.5 w-full md:w-auto">
-        <button
-          onClick={() => onStatusFilterChange(statusFilter === 'ACTIVO' ? 'TODOS' : 'ACTIVO')}
-          className={`px-3.5 py-2 text-xs font-bold rounded-xl border transition-all flex items-center gap-1.5 cursor-pointer focus:outline-none ${
-            statusFilter === 'ACTIVO'
-              ? 'bg-emerald-500 text-white border-emerald-600 shadow-md shadow-emerald-500/20'
-              : 'bg-emerald-50 hover:bg-emerald-100/80 text-emerald-700 border-emerald-200'
-          }`}
-        >
-          <Filter className={`w-3.5 h-3.5 ${statusFilter === 'ACTIVO' ? 'text-white' : 'text-emerald-600'}`} />
-          Solo Activos
-        </button>
-
-        <button
-          onClick={() => onStatusFilterChange(statusFilter === 'INACTIVO' ? 'TODOS' : 'INACTIVO')}
-          className={`px-3.5 py-2 text-xs font-bold rounded-xl border transition-all flex items-center gap-1.5 cursor-pointer focus:outline-none ${
-            statusFilter === 'INACTIVO'
-              ? 'bg-slate-200 border-slate-300 text-slate-900 font-extrabold shadow-sm'
-              : 'bg-slate-100 hover:bg-slate-200/80 text-slate-700 border-slate-200'
-          }`}
-        >
-          Ver Inactivos
-        </button>
-
+    <div className="space-y-4">
+      {/* Search Input box */}
+      <div className="bg-white border border-slate-200/70 rounded-[22px] p-4 flex items-center justify-between gap-3 shadow-xs">
+        <div className="flex-1">
+          <SearchInput
+            value={searchTerm}
+            onChange={onSearchChange}
+            placeholder="Buscar empleado por nombre, cédula, código, puesto..."
+          />
+        </div>
         <button
           onClick={onRefresh}
-          className="p-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl transition-all cursor-pointer shadow-sm focus:outline-none"
-          title="Actualizar tabla"
+          className="p-2.5 bg-[#10b981] hover:bg-[#059669] text-white rounded-full transition-all cursor-pointer shadow-xs focus:outline-none shrink-0"
+          title="Actualizar datos"
         >
-          <RefreshCw className={`w-4 h-4 text-emerald-400 ${loading ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`w-3.5 h-3.5 text-white ${loading ? 'animate-spin' : ''}`} />
         </button>
+      </div>
+
+      {/* Pill Filter Row (Fila propia limpia debajo de la búsqueda) */}
+      <div className="px-1 py-0.5">
+        <PillFilterGroup<'TODOS' | 'ACTIVO' | 'INACTIVO'>
+          title="Empleados"
+          options={filterOptions}
+          value={statusFilter}
+          onChange={onStatusFilterChange}
+        />
       </div>
     </div>
   );

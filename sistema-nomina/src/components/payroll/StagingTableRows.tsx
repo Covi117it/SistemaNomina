@@ -14,7 +14,7 @@ export const StagingTableRows: React.FC<StagingTableRowsProps> = ({
   onSelectPdfItem,
 }) => {
   return (
-    <div className="overflow-x-auto rounded-xl border border-slate-200 max-h-[460px]">
+    <div className="overflow-x-auto">
       <table className="w-full text-left text-xs text-slate-700">
         <thead className="bg-slate-50 text-slate-500 uppercase text-[11px] font-bold tracking-wider sticky top-0 border-b border-slate-200 z-10">
           <tr>
@@ -31,31 +31,33 @@ export const StagingTableRows: React.FC<StagingTableRowsProps> = ({
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100 bg-white">
-          {items.map((item: NominaItem, idx: number) => (
-            <tr
-              key={idx}
-              className={`transition-colors ${
-                !item.empleadoExiste ? 'bg-rose-50/40 hover:bg-rose-100/50' : 'hover:bg-slate-50/70'
-              }`}
-            >
-              <td className="py-2.5 px-3">
-                {!item.empleadoExiste ? (
-                  <span className="px-2 py-0.5 bg-rose-100 text-rose-800 text-[10px] font-extrabold rounded-full inline-flex items-center gap-1">
-                    <AlertTriangle className="w-3 h-3 text-rose-600" />
-                    No Existe
-                  </span>
-                ) : item.eStatusEmpleado === 'INACTIVO' ? (
-                  <span className="px-2 py-0.5 bg-amber-100 text-amber-800 border border-amber-200 text-[10px] font-extrabold rounded-full inline-flex items-center gap-1">
-                    <AlertTriangle className="w-3 h-3 text-amber-600" />
-                    Inactivo
-                  </span>
-                ) : (
-                  <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-extrabold rounded-full inline-flex items-center gap-1">
-                    <ShieldCheck className="w-3 h-3 text-emerald-600" />
-                    Registrado
-                  </span>
-                )}
-              </td>
+            {(items || []).map((item: NominaItem, idx: number) => {
+            const esInexistente = !item.empleadoExiste || item.eStatusEmpleado === 'NO_EXISTE' || item.nombreEmpleado?.includes('NO REGISTRADO');
+            return (
+              <tr
+                key={idx}
+                className={`transition-colors ${
+                  esInexistente ? 'bg-rose-50/40 hover:bg-rose-100/50' : 'hover:bg-slate-50/70'
+                }`}
+              >
+                <td className="py-2.5 px-3">
+                  {esInexistente ? (
+                    <span className="px-2 py-0.5 bg-rose-100 text-rose-800 text-[10px] font-extrabold rounded-full inline-flex items-center gap-1">
+                      <AlertTriangle className="w-3 h-3 text-rose-600" />
+                      No Existe
+                    </span>
+                  ) : item.eStatusEmpleado === 'INACTIVO' ? (
+                    <span className="px-2 py-0.5 bg-amber-100 text-amber-800 border border-amber-200 text-[10px] font-extrabold rounded-full inline-flex items-center gap-1">
+                      <AlertTriangle className="w-3 h-3 text-amber-600" />
+                      Inactivo
+                    </span>
+                  ) : (
+                    <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-extrabold rounded-full inline-flex items-center gap-1">
+                      <ShieldCheck className="w-3 h-3 text-emerald-600" />
+                      Registrado
+                    </span>
+                  )}
+                </td>
 
               <td className="py-2.5 px-3 font-mono font-bold text-emerald-600">
                 {item.codigoEmpleado}
@@ -128,10 +130,11 @@ export const StagingTableRows: React.FC<StagingTableRowsProps> = ({
                   Ver PDF
                 </button>
               </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-};
+ </tr>
+      );
+        })}
+      </tbody>
+     </table>
+   </div>
+ );
+ };

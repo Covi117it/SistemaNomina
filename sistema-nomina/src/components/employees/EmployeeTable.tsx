@@ -2,6 +2,8 @@ import React from 'react';
 import { Empleado } from '../../types/empleado';
 import { FileSpreadsheet, Edit2, Trash2 } from 'lucide-react';
 import { StatusSelect } from '../common/StatusSelect';
+import { Pagination } from '../common/Pagination';
+
 interface EmployeeTableProps {
   employees: Empleado[];
   updatingCodigo: string | null;
@@ -9,6 +11,12 @@ interface EmployeeTableProps {
   onEstatusChange: (emp: Empleado, nuevoEstatus: string) => void;
   onEditClick: (emp: Empleado) => void;
   onDeleteClick: (codigo: string) => void;
+  currentPage?: number;
+  totalPages?: number;
+  totalItems?: number;
+  pageSize?: number;
+  onPageChange?: (page: number) => void;
+  onPageSizeChange?: (pageSize: number) => void;
 }
 
 export const EmployeeTable: React.FC<EmployeeTableProps> = ({
@@ -18,8 +26,13 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
   onEstatusChange,
   onEditClick,
   onDeleteClick,
+  currentPage = 1,
+  totalPages = 1,
+  totalItems,
+  pageSize = 10,
+  onPageChange,
+  onPageSizeChange,
 }) => {
-
   // Formateador de fecha limpia DD/MM/YYYY
   const formatDisplayDate = (isoDate?: string | null) => {
     if (!isoDate || !isoDate.trim()) return '-';
@@ -31,13 +44,15 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
     return isoDate;
   };
 
+  const actualTotalItems = totalItems !== undefined ? totalItems : employees.length;
+
   return (
     <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm overflow-hidden">
       {/* Encabezado de la Tabla */}
       <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
         <h3 className="text-xs font-bold uppercase tracking-wider text-slate-600 flex items-center gap-2">
-          <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
-          Directorio Oficial de Empleados ({employees.length})
+          <FileSpreadsheet className="w-4 h-4 text-[#10b981]" />
+          Directorio Oficial de Empleados ({actualTotalItems})
         </h3>
       </div>
 
@@ -74,10 +89,10 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
                     key={emp.codigo}
                     onDoubleClick={() => onDoubleClickRow(emp)}
                     title="Haz doble clic para editar los datos de este empleado"
-                    className="hover:bg-emerald-50/50 transition-colors cursor-pointer select-none group"
+                    className="hover:bg-[#e6f7ef]/50 transition-colors cursor-pointer select-none group"
                   >
                     {/* Código */}
-                    <td className="py-3.5 px-4 font-mono text-emerald-600 font-bold text-xs">
+                    <td className="py-3.5 px-4 font-mono text-[#0d784a] font-bold text-xs">
                       {emp.codigo}
                     </td>
 
@@ -98,13 +113,11 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
 
                     {/* Estatus */}
                     <td className="py-3.5 px-4" onClick={(e) => e.stopPropagation()}>
-                      <td className="py-3.5 px-4" onClick={(e) => e.stopPropagation()}>
-  <StatusSelect
-    value={emp.eStatus || 'ACTIVO'}
-    onChange={(nuevoEstatus) => onEstatusChange(emp, nuevoEstatus)}
-    disabled={isUpdatingThis}
-  />
-</td>
+                      <StatusSelect
+                        value={emp.eStatus || 'ACTIVO'}
+                        onChange={(nuevoEstatus) => onEstatusChange(emp, nuevoEstatus)}
+                        disabled={isUpdatingThis}
+                      />
                     </td>
 
                     {/* Puesto */}
@@ -117,7 +130,7 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
                       {formatDisplayDate(emp.fechaIngreso)}
                     </td>
 
-                    {/* Fecha de Nacimiento (AGREGADA) */}
+                    {/* Fecha de Nacimiento */}
                     <td className="py-3.5 px-4 font-mono text-slate-500 text-xs">
                       {formatDisplayDate(emp.fechaNacimiento)}
                     </td>
@@ -133,7 +146,7 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
                         <button
                           onClick={() => onEditClick(emp)}
                           title="Editar empleado"
-                          className="p-1.5 hover:bg-emerald-100 text-slate-400 hover:text-emerald-700 rounded-lg transition-colors cursor-pointer"
+                          className="p-1.5 hover:bg-[#e6f7ef] text-slate-400 hover:text-[#0d784a] rounded-lg transition-colors cursor-pointer"
                         >
                           <Edit2 className="w-3.5 h-3.5" />
                         </button>
@@ -153,6 +166,18 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
           </tbody>
         </table>
       </div>
+
+      {/* Componente de Paginación */}
+      {onPageChange && onPageSizeChange && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={actualTotalItems}
+          pageSize={pageSize}
+          onPageChange={onPageChange}
+          onPageSizeChange={onPageSizeChange}
+        />
+      )}
     </div>
   );
 };

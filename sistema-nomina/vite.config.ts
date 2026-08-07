@@ -12,6 +12,28 @@ export default defineConfig(async () => ({
     tailwindcss(), // <- Agregado aquí
   ],
 
+  // 3. Configure build chunk splitting
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes("node_modules")) {
+            if (id.includes("react") || id.includes("react-dom")) {
+              return "vendor-react";
+            }
+            if (id.includes("lucide-react")) {
+              return "vendor-icons";
+            }
+            if (id.includes("sweetalert2") || id.includes("axios")) {
+              return "vendor-libs";
+            }
+            return "vendor";
+          }
+        },
+      },
+    },
+  },
+
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   //
   // 1. prevent Vite from obscuring rust errors

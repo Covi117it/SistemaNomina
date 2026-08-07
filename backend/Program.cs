@@ -1,3 +1,5 @@
+using backend.Application.Features.Nomina.Commands;
+using backend.Application.Features.Nomina.Queries;
 using backend.Data;
 using backend.Endpoints;  
 using backend.Services;  
@@ -6,12 +8,19 @@ using Microsoft.EntityFrameworkCore;
 var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
     ?? "Data Source=nomina.db";
-
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(connectionString));
 builder.Services.AddScoped<IExcelService, ExcelService>();
 builder.Services.AddScoped<IPdfService, PdfService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IEmpleadoService, EmpleadoService>();
+builder.Services.AddDataProtection();
+builder.Services.AddSingleton<ICryptoService, CryptoService>();
+builder.Services.AddScoped<PreviewQuincenaQueryHandler>();
+builder.Services.AddScoped<ProcesarQuincenaCommandHandler>();
+builder.Services.AddScoped<ObtenerHistoricoQueryHandler>();
+builder.Services.AddScoped<EnviarVolantesCommandHandler>();
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddCors(options =>
@@ -42,7 +51,7 @@ app.MapGet("/api/health", () => Results.Ok(new
     Timestamp = DateTime.Now 
 })).WithName("GetHealthCheck");
 
-// Registrar Endpoints del Backend
+// 4. Registrar Endpoints Minimal API
 app.MapEmpleadosEndPoints();
 app.MapNominaEndpoints(); 
 app.MapConfigEndpoints();

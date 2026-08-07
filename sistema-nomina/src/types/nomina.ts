@@ -34,3 +34,12 @@ export interface PreviewNominaResponse {
   resumenTotales: ResumenTotalesNomina;
   items: NominaItem[];
 }
+
+export interface PreviewNominaResponse {
+  totalRegistros: number;
+  codigosNoEncontrados: number;
+  quincenaSugerida?: string;
+  mesSugerido?: number;
+  resumenTotales: ResumenTotalesNomina;
+  items: NominaItem[];
+}

@@ -15,9 +15,24 @@ export const EmployeeKpiCards: React.FC<EmployeeKpiCardsProps> = ({
 }) => {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-      <StatCard label="Total Empleados" value={total} icon={<Users className="w-5 h-5" />} variant="slate" />
-      <StatCard label="Empleados Activos" value={activos} icon={<UserCheck className="w-5 h-5" />} variant="emerald" />
-      <StatCard label="Empleados Inactivos" value={inactivos} icon={<UserX className="w-5 h-5" />} variant="slate" />
+      <StatCard
+        label="total empleados"
+        value={total}
+        icon={<Users className="w-4 h-4" />}
+        variant="slate"
+      />
+      <StatCard
+        label="empleados activos"
+        value={activos}
+        icon={<UserCheck className="w-4 h-4" />}
+        variant="emerald"
+      />
+      <StatCard
+        label="empleados inactivos"
+        value={inactivos}
+        icon={<UserX className="w-4 h-4" />}
+        variant="rose"
+      />
     </div>
   );
 };

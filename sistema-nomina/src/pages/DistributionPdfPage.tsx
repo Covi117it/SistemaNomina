@@ -1,115 +1,82 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { NominaItem } from '../types/nomina';
-import { PDFPaystubModal } from '../components/payroll/PDFPaystubModal';
 import { PageHeader } from '../components/common/PageHeader';
 import { StatCard } from '../components/common/StatCard';
 import { DistributionTable } from '../components/payroll/DistributionTable';
 import { SmtpConfigModal } from '../components/payroll/SmtpConfigModal';
+import { SearchInput } from '../components/common/SearchInput';
+import { FormSelect } from '../components/common/FormSelect';
+import { PillFilterGroup } from '../components/common/PillFilterGroup';
 import { formatCurrency } from '../utils/formatters';
-import { Mail, Send, FileText, CheckCircle2, Settings, Loader2 } from 'lucide-react';
-import axios from 'axios';
+import { Mail, Send, FileText, CheckCircle2, Settings, Loader2, Calendar } from 'lucide-react';
+import { ActionsDropdown } from '../components/common/ActionsDropdown';
+import { useDistributionPdf } from '../hooks/useDistributionPdf';
 
 interface DistributionPdfPageProps {
   items?: NominaItem[];
   conceptoPeriodo?: string;
   onBack: () => void;
   onSuccessDispatch?: () => void;
+  onNavigateToDirectory?: () => void;
+  onNavigateToCreate?: () => void;
+  onNavigateToPayroll?: () => void;
+  onNavigateToHistory?: () => void;
+  onNavigateToDistribution?: () => void;
 }
 
 export const DistributionPdfPage: React.FC<DistributionPdfPageProps> = ({
   items = [],
-  conceptoPeriodo = 'Primera Quincena de Enero 2026',
+  conceptoPeriodo = '',
   onBack,
+  onNavigateToDirectory,
+  onNavigateToCreate,
+  onNavigateToPayroll,
+  onNavigateToHistory,
+  onNavigateToDistribution,
 }) => {
-  const [selectedPdfItem, setSelectedPdfItem] = useState<NominaItem | null>(null);
-  const [sending, setSending] = useState(false);
-  const [loadingHistoric, setLoadingHistoric] = useState(false);
-  const [showSmtpModal, setShowSmtpModal] = useState(false);
-  const [dispatchResult, setDispatchResult] = useState<{ exitosos: number; fallidos: number } | null>(null);
-  const [localItems, setLocalItems] = useState<NominaItem[]>(items || []);
-  const [periodoNombre, setPeriodoNombre] = useState<string>(conceptoPeriodo);
-
-   useEffect(() => {
-    let isMounted = true;
-    if (items && items.length > 0) {
-      setLocalItems(items);
-      setLoadingHistoric(false);
-    } else {
-      setLoadingHistoric(true);
-      axios.get('http://localhost:5289/api/nomina/historico')
-        .then((res) => {
-          if (!isMounted) return;
-          if (res.data && res.data.length > 0) {
-            const ultimoPeriodo = res.data[0];
-            setPeriodoNombre(ultimoPeriodo.concepto || conceptoPeriodo);
-            if (ultimoPeriodo.detalles) {
-              const mappedItems = ultimoPeriodo.detalles.map((det: any) => ({
-                codigoEmpleado: det.codigoEmpleado,
-                nombreEmpleado: det.nombreEmpleadoSnapshot,
-                sueldoBase: det.sueldoPeriodo,
-                quincena: ultimoPeriodo.quincena,
-                totalDevengado: det.totalDevengado,
-                totalDeducciones: det.totalDeducciones,
-                netoAPagar: det.netoPagado,
-                emailDestinatario: det.emailDestinatario,
-                empleadoExiste: true,
-              }));
-              setLocalItems(mappedItems);
-            }
-          }
-        })
-        .catch((err) => {
-          console.error('Error cargando volantes históricos:', err);
-        })
-        .finally(() => {
-          if (isMounted) setLoadingHistoric(false);
-        });
-    }
-    return () => {
-      isMounted = false;
-    };
-  }, [items?.length]); 
-
-  const handleUpdateEmail = (index: number, newEmail: string) => {
-    const updated = [...localItems];
-    updated[index] = { ...updated[index], emailDestinatario: newEmail };
-    setLocalItems(updated);
-  };
-
-  const handleSendEmails = async () => {
-    if (!localItems || localItems.length === 0) return;
-    setSending(true);
-    setDispatchResult(null);
-
-    try {
-      const smtpRes = await axios.get('http://localhost:5289/api/config/smtp');
-      const payload = {
-        items: localItems,
-        conceptoPeriodo: periodoNombre,
-        smtpConfig: smtpRes.data,
-      };
-
-      const res = await axios.post('http://localhost:5289/api/nomina/enviar-volantes-correo', payload);
-      setDispatchResult({
-        exitosos: res.data.exitosos || localItems.length,
-        fallidos: res.data.fallidos || 0,
-      });
-    } catch (err) {
-      alert('Error al conectar con el servidor SMTP de correo.');
-    } finally {
-      setSending(false);
-    }
-  };
-
-  const safeItems = localItems || [];
-  const validEmailsCount = safeItems.filter((i) => i.emailDestinatario && i.emailDestinatario.includes('@')).length;
-  const totalMonto = safeItems.reduce((acc, i) => acc + (i.netoAPagar || 0), 0);
+  const {
+    sending,
+    loadingHistoric,
+    showSmtpModal,
+    setShowSmtpModal,
+    dispatchResult,
+    periodoNombre,
+    searchTerm,
+    setSearchTerm,
+    distributionFilter,
+    setDistributionFilter,
+    periodosHistoricos,
+    selectedPeriodoId,
+    setSelectedPeriodoId,
+    cargarDetallesPeriodo,
+    safeItems,
+    activeItems,
+    excludedItemsCount,
+    filteredItems,
+    validEmailsCount,
+    totalMonto,
+    handleUpdateEmail,
+    handleToggleExclude,
+    handleSendEmails,
+  } = useDistributionPdf(items, conceptoPeriodo);
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
       <PageHeader
-        title={`Panel de Distribución e Inspección de PDF - ${periodoNombre}`}
+        title={`Panel de Distribución de Volantes`}
         onBack={onBack}
+        leftActions={
+          onNavigateToCreate && (
+            <ActionsDropdown
+              currentView="distribution-pdf"
+              onNavigateToDirectory={onNavigateToDirectory}
+              onNavigateToCreate={onNavigateToCreate}
+              onNavigateToPayroll={onNavigateToPayroll}
+              onNavigateToHistory={onNavigateToHistory}
+              onNavigateToDistribution={onNavigateToDistribution}
+            />
+          )
+        }
         actions={
           <>
             <button
@@ -122,15 +89,46 @@ export const DistributionPdfPage: React.FC<DistributionPdfPageProps> = ({
 
             <button
               onClick={handleSendEmails}
-              disabled={sending || safeItems.length === 0}
+              disabled={sending || activeItems.length === 0}
               className="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-extrabold rounded-xl shadow-lg shadow-emerald-500/25 transition-all flex items-center gap-2 disabled:opacity-50 cursor-pointer"
             >
               <Send className="w-4 h-4" />
-              {sending ? 'Despachando Correos...' : 'Enviar Volantes por Correo'}
+              {sending ? 'Despachando Correos...' : `Enviar Volantes por Correo (${activeItems.length})`}
             </button>
           </>
         }
       />
+
+      {periodosHistoricos.length > 0 && (!items || items.length === 0) && (
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-3.5 px-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3 transition-all">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+              <Calendar className="w-4 h-4" />
+            </div>
+            <div>
+              <h4 className="text-xs font-extrabold text-slate-800 tracking-tight">Período de Nómina a Procesar</h4>
+            </div>
+          </div>
+
+          <FormSelect
+            options={periodosHistoricos.map((p) => ({
+              label: `${p.concepto} (DOP$ ${p.montoTotalNeto?.toLocaleString('es-DO', { minimumFractionDigits: 2 })})`,
+              value: p.id.toString(),
+            }))}
+            value={selectedPeriodoId ? selectedPeriodoId.toString() : ''}
+            onChange={(val) => {
+              const pId = parseInt(val, 10);
+              setSelectedPeriodoId(pId);
+              const pEncontrado = periodosHistoricos.find((p) => p.id === pId);
+              if (pEncontrado) {
+                cargarDetallesPeriodo(pEncontrado);
+              }
+            }}
+            placeholder="Seleccionar período de nómina..."
+            className="w-full md:w-auto min-w-[340px]"
+          />
+        </div>
+      )}
 
       {dispatchResult && (
         <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center justify-between shadow-sm animate-in fade-in">
@@ -158,7 +156,7 @@ export const DistributionPdfPage: React.FC<DistributionPdfPageProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <StatCard
               label="Total Volantes a Enviar"
-              value={safeItems.length}
+              value={activeItems.length}
               icon={<Mail className="w-5 h-5" />}
               variant="slate"
             />
@@ -176,19 +174,35 @@ export const DistributionPdfPage: React.FC<DistributionPdfPageProps> = ({
             />
           </div>
 
+          <div className="space-y-4">
+            <div className="bg-white border border-slate-200/80 rounded-[22px] p-4 shadow-sm">
+              <SearchInput
+                value={searchTerm}
+                onChange={setSearchTerm}
+                placeholder="Buscar empleado por nombre, cédula, código, puesto..."
+              />
+            </div>
+            <div className="px-1 py-0.5">
+              <PillFilterGroup<'TODOS' | 'INCLUIDOS' | 'EXCLUIDOS'>
+                title="Volantes"
+                options={[
+                  { key: 'TODOS', label: 'Todos', count: safeItems.length },
+                  { key: 'INCLUIDOS', label: 'Incluidos', count: activeItems.length },
+                  { key: 'EXCLUIDOS', label: 'Excluidos', count: excludedItemsCount },
+                ]}
+                value={distributionFilter}
+                onChange={setDistributionFilter}
+              />
+            </div>
+          </div>
+
           <DistributionTable
-            items={safeItems}
+            items={filteredItems}
             onUpdateEmail={handleUpdateEmail}
-            onSelectPdfItem={setSelectedPdfItem}
+            onToggleExclude={handleToggleExclude}
           />
         </>
       )}
-
-      <PDFPaystubModal
-        isOpen={!!selectedPdfItem}
-        item={selectedPdfItem}
-        onClose={() => setSelectedPdfItem(null)}
-      />
 
       <SmtpConfigModal
         isOpen={showSmtpModal}

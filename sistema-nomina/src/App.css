@@ -1,22 +1,36 @@
 /* 1. Importación de Fuentes Externas (Deben ir al inicio absoluto) */
-@import url('https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,300..900;1,300..900&family=JetBrains+Mono:wght@400;500;600;700;800&family=Onest:wght@400;500;600;700;800;900&family=Schibsted+Grotesk:ital,wght@0,400..900;1,400..900&family=Urbanist:ital,wght@0,400..900;1,400..900&display=swap');
-@import url('https://api.fontshare.com/v2/css?f[]=satoshi@700,500,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&family=Figtree:ital,wght@0,300..900;1,300..900&family=JetBrains+Mono:wght@400;500;600;700;800&family=Onest:wght@400;500;600;700;800;900&family=Schibsted+Grotesk:ital,wght@0,400..900;1,400..900&family=Urbanist:ital,wght@0,400..900;1,400..900&display=swap');
+@import url('https://api.fontshare.com/v2/css?f[]=general-sans@400,500,600,700&f[]=switzer@400,500,600,700&f[]=satoshi@700,500,400&display=swap');
 
 /* 2. Framework Tailwind CSS v4 */
 @import "tailwindcss";
-/* 2. Definición del Sistema de Tipografías */
+
+/* 3. Definición del Sistema de Tipografías */
 @layer base {
   body {
-    font-family: 'Figtree', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: 'Switzer', 'Figtree', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     -webkit-font-smoothing: antialiased;
   }
 
   h1, h2, h3, .font-display {
-    font-family: 'Urbanist', 'Figtree', sans-serif;
+    font-family: 'General Sans', 'Urbanist', 'Switzer', sans-serif;
   }
 }
 
-/* 3. Clases de Utilidad Personalizadas */
+/* 4. Clases de Utilidad Personalizadas */
+.font-switzer {
+  font-family: 'Switzer', sans-serif;
+}
+
+.font-general {
+  font-family: 'General Sans', sans-serif;
+}
+
+.font-space-mono {
+  font-family: 'Space Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
 .font-figtree {
   font-family: 'Figtree', sans-serif;
 }
@@ -38,6 +52,6 @@
 }
 
 .font-mono-numbers {
-  font-family: 'JetBrains Mono', 'Onest', monospace;
+  font-family: 'Space Mono', 'JetBrains Mono', monospace;
   font-variant-numeric: tabular-nums;
 }
