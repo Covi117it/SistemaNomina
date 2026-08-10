@@ -29,7 +29,6 @@ namespace backend.Services
         Task<int> GuardarLoteAsync(List<Empleado> empleadosLote);
         Task<bool> EliminarEmpleadoAsync(string codigo);
         Task<int> CambiarEstatusTodosAsync(string nuevoEstatus);
-        Task<int> VaciarBaseDatosAsync();
         Task<string> ObtenerSiguienteCodigoSugeridoAsync();
     }
 }

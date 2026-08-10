@@ -1,3 +1,4 @@
+using backend.Application.Features.Empleados.Queries;
 using backend.Application.Features.Nomina.Commands;
 using backend.Application.Features.Nomina.Queries;
 using backend.Data;
@@ -6,20 +7,25 @@ using backend.Services;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
-    ?? "Data Source=nomina.db";
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+var serverVersion = ServerVersion.AutoDetect(connectionString);
+
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlite(connectionString));
+    options.UseMySql(connectionString, serverVersion));
 builder.Services.AddScoped<IExcelService, ExcelService>();
+builder.Services.AddScoped<IExcelExportService, ExcelExportService>();
 builder.Services.AddScoped<IPdfService, PdfService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IEmpleadoService, EmpleadoService>();
+builder.Services.AddScoped<IMariaDbBackupService, MariaDbBackupService>();
 builder.Services.AddDataProtection();
 builder.Services.AddSingleton<ICryptoService, CryptoService>();
 builder.Services.AddScoped<PreviewQuincenaQueryHandler>();
 builder.Services.AddScoped<ProcesarQuincenaCommandHandler>();
 builder.Services.AddScoped<ObtenerHistoricoQueryHandler>();
 builder.Services.AddScoped<EnviarVolantesCommandHandler>();
+builder.Services.AddScoped<ObtenerExportacionNominaQueryHandler>();
+builder.Services.AddScoped<ObtenerExportacionEmpleadosQueryHandler>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

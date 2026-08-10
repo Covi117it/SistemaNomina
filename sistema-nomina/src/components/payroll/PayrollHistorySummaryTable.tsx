@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Eye } from 'lucide-react';
 import { formatCurrency } from '../../utils/formatters';
+import { Pagination } from '../common/Pagination';
 
 interface PayrollHistorySummaryTableProps {
   records: any[];
@@ -11,6 +12,9 @@ export const PayrollHistorySummaryTable: React.FC<PayrollHistorySummaryTableProp
   records,
   onSelectPeriod,
 }) => {
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
   if (records.length === 0) {
     return (
       <div className="text-center py-10">
@@ -18,6 +22,14 @@ export const PayrollHistorySummaryTable: React.FC<PayrollHistorySummaryTableProp
       </div>
     );
   }
+
+  const totalItems = records.length;
+  const totalPages = Math.ceil(totalItems / pageSize) || 1;
+
+  const paginatedRecords = records.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
 
   return (
     <div className="overflow-x-auto">
@@ -35,7 +47,7 @@ export const PayrollHistorySummaryTable: React.FC<PayrollHistorySummaryTableProp
           </tr>
         </thead>
         <tbody className="divide-y">
-          {records.map((periodo: any) => (
+          {paginatedRecords.map((periodo: any) => (
             <tr
               key={periodo.id}
               onDoubleClick={() => onSelectPeriod(periodo)}
@@ -65,6 +77,19 @@ export const PayrollHistorySummaryTable: React.FC<PayrollHistorySummaryTableProp
           ))}
         </tbody>
       </table>
+
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={totalItems}
+        pageSize={pageSize}
+        onPageChange={setCurrentPage}
+        onPageSizeChange={(size) => {
+          setPageSize(size);
+          setCurrentPage(1);
+        }}
+        itemLabel="nóminas"
+      />
     </div>
   );
 };

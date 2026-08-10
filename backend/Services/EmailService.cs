@@ -91,15 +91,23 @@ namespace backend.Services
             }
         }    
 
-        public async Task<List<EmailSendResultDto>> EnviarVolantesMasivosAsync(List<EmailTaskDto> tasks, string conceptoPeriodo, SmtpSettings settings)
+       public async Task<List<EmailSendResultDto>> EnviarVolantesMasivosAsync(List<EmailTaskDto> tasks, string conceptoPeriodo, SmtpSettings settings)
         {
             var resultados = new List<EmailSendResultDto>();
-            foreach (var task in tasks)
+
+            for (int i = 0; i < tasks.Count; i++)
             {
-                var res = await EnviarVolanteIndividualAsync(task, conceptoPeriodo, settings);
+               var task = tasks[i];
+
+               var res = await EnviarVolanteIndividualAsync(task, conceptoPeriodo, settings);
                 resultados.Add(res);
+
+                if (i < tasks.Count - 1)
+                {
+                    await Task.Delay(300);
+                } 
             }
             return resultados;
         }
+        }
     }
-}

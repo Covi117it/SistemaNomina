@@ -1,7 +1,8 @@
 import React from 'react';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, FileSpreadsheet } from 'lucide-react';
 import { SearchInput } from '../common/SearchInput';
 import { PillFilterGroup, PillOption } from '../common/PillFilterGroup';
+import { ENDPOINTS } from '../../config/api';
 
 interface EmployeeToolbarProps {
   searchTerm: string;
@@ -43,13 +44,24 @@ export const EmployeeToolbar: React.FC<EmployeeToolbarProps> = ({
             placeholder="Buscar empleado por nombre, cédula, código, puesto..."
           />
         </div>
-        <button
-          onClick={onRefresh}
-          className="p-2.5 bg-[#10b981] hover:bg-[#059669] text-white rounded-full transition-all cursor-pointer shadow-xs focus:outline-none shrink-0"
-          title="Actualizar datos"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 text-white ${loading ? 'animate-spin' : ''}`} />
-        </button>
+        <div className="flex items-center gap-2 shrink-0">
+          <a
+            href={`${ENDPOINTS.EMPLEADOS}/exportar-excel`}
+            download
+            className="px-3.5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all flex items-center gap-2 cursor-pointer shadow-xs no-underline shrink-0"
+            title="Exportar catálogo completo de empleados a Excel (.xlsx)"
+          >
+            <FileSpreadsheet className="w-4 h-4 text-white" />
+            Exportar Excel
+          </a>
+          <button
+            onClick={onRefresh}
+            className="p-2.5 bg-[#10b981] hover:bg-[#059669] text-white rounded-full transition-all cursor-pointer shadow-xs focus:outline-none shrink-0"
+            title="Actualizar datos"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 text-white ${loading ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
       </div>
 
       {/* Pill Filter Row (Fila propia limpia debajo de la búsqueda) */}

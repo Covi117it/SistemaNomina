@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Search, CheckCircle2, FileText, Mail, Loader2 } from 'lucide-react';
+import { ArrowLeft, Search, CheckCircle2, FileText, Mail, Loader2, FileSpreadsheet } from 'lucide-react';
 import { NominaItem } from '../../types/nomina';
 import { usePaystubEmailDispatcher } from '../../hooks/usePaystubEmailDispatcher';
+import { ENDPOINTS } from '../../config/api';
+import { Pagination } from '../common/Pagination';
 
 interface PayrollHistoryDetailProps {
   period: any;
@@ -15,6 +17,8 @@ export const PayrollHistoryDetail: React.FC<PayrollHistoryDetailProps> = ({
   onSelectPdfItem,
 }) => {
   const [detailSearchTerm, setDetailSearchTerm] = useState<string>('');
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(10);
   const { sendingId, sentIds, sendSingleEmail } = usePaystubEmailDispatcher();
 
   const formatCurrency = (amount: number) => {
@@ -61,17 +65,33 @@ export const PayrollHistoryDetail: React.FC<PayrollHistoryDetailProps> = ({
     );
   });
 
+  const totalItems = filteredDetalles?.length || 0;
+  const totalPages = Math.ceil(totalItems / pageSize) || 1;
+  const paginatedDetalles = filteredDetalles?.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
+
   return (
     <div className="space-y-6 animate-in fade-in">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}
-            className="p-2.5 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs font-bold rounded-xl transition-all cursor-pointer shadow-sm flex items-center gap-2"
+            className="p-2.5 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs font-bold rounded-xl transition-all cursor-pointer shadow-xs flex items-center gap-2"
           >
             <ArrowLeft className="w-4 h-4 text-slate-600" />
             Volver al Histórico
           </button>
+          <a
+            href={`${ENDPOINTS.NOMINA}/exportar-excel/${period.id}`}
+            download
+            className="px-3.5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all flex items-center gap-2 cursor-pointer shadow-xs no-underline shrink-0"
+            title="Exportar esta nómina a Excel (.xlsx)"
+          >
+            <FileSpreadsheet className="w-4 h-4 text-white" />
+            Exportar Excel
+          </a>
           <div>
             <h2 className="text-xl font-extrabold text-slate-900 mt-1">
               {period.concepto}
@@ -117,7 +137,10 @@ export const PayrollHistoryDetail: React.FC<PayrollHistoryDetailProps> = ({
               type="text"
               placeholder="Filtrar por código, nombre o correo..."
               value={detailSearchTerm}
-              onChange={(e) => setDetailSearchTerm(e.target.value)}
+              onChange={(e) => {
+                setDetailSearchTerm(e.target.value);
+                setCurrentPage(1);
+              }}
               className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:bg-white focus:border-emerald-500 focus:outline-none transition-all"
             />
           </div>
@@ -142,7 +165,7 @@ export const PayrollHistoryDetail: React.FC<PayrollHistoryDetailProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y">
-              {filteredDetalles?.map((det: any) => {
+              {paginatedDetalles?.map((det: any) => {
                 const isSending = sendingId === det.id;
                 const isSent = sentIds.has(det.id);
 
@@ -225,6 +248,19 @@ export const PayrollHistoryDetail: React.FC<PayrollHistoryDetailProps> = ({
               })}
             </tbody>
           </table>
+
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={(size) => {
+              setPageSize(size);
+              setCurrentPage(1);
+            }}
+            itemLabel="empleados"
+          />
         </div>
       </div>
     </div>

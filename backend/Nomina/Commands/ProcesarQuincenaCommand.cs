@@ -5,7 +5,9 @@ using System.Threading.Tasks;
 using backend.Data;
 using backend.DTOs;
 using backend.Models;
+using backend.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace backend.Application.Features.Nomina.Commands
 {
@@ -19,10 +21,14 @@ namespace backend.Application.Features.Nomina.Commands
     public class ProcesarQuincenaCommandHandler
     {
         private readonly AppDbContext _db;
+        private readonly IServiceScopeFactory _scopeFactory;
+        private readonly ILogger<ProcesarQuincenaCommandHandler> _logger;
 
-        public ProcesarQuincenaCommandHandler(AppDbContext db)
+        public ProcesarQuincenaCommandHandler(AppDbContext db, IServiceScopeFactory scopeFactory, ILogger<ProcesarQuincenaCommandHandler> logger)
         {
             _db = db;
+            _scopeFactory = scopeFactory;
+            _logger = logger;
         }
 
         public async Task<IResult> HandleAsync(ProcesarQuincenaCommand command)
@@ -113,6 +119,21 @@ namespace backend.Application.Features.Nomina.Commands
 
                 await _db.SaveChangesAsync();
                 await transaction.CommitAsync();
+
+                // Respaldo de base de datos garantizado ÚNICAMENTE tras la confirmación exitosa de la transacción
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        using var scope = _scopeFactory.CreateScope();
+                        var backupService = scope.ServiceProvider.GetRequiredService<IMariaDbBackupService>();
+                        await backupService.GenerarYSubirRespaldoAsync(nuevoPeriodo.Quincena, nuevoPeriodo.Mes, DateTime.UtcNow.Year);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error al ejecutar el respaldo automático en segundo plano tras guardar la nómina.");
+                    }
+                });
 
                 return Results.Ok(new
                 {

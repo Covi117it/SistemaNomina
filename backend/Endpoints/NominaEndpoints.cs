@@ -103,6 +103,15 @@ namespace backend.Endpoints
             })
             .WithSummary("Recalcula el Neto a Pagar de cada ítem y los totales generales en el servidor.")
             .DisableAntiforgery();
+            
+
+            group.MapGet("/exportar-excel/{id:int}", async (int id, ObtenerExportacionNominaQueryHandler handler) =>
+            {
+                var resultado = await handler.HandleAsync(id);
+                if (resultado == null) return Results.NotFound(new { mensaje = "No se encontró el período de nómina." });
+                return Results.File(resultado.Value.Bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", resultado.Value.NombreArchivo);
+            })
+            .WithSummary("Exporta el detalle de una nómina procesada a Excel (.xlsx).");
         }
     }
 }

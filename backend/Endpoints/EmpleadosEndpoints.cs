@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using backend.Application.Features.Empleados.Queries;
 using backend.Models;
 using backend.Services;
 using Microsoft.AspNetCore.Builder;
@@ -114,17 +115,13 @@ namespace backend.Endpoints
             })
             .WithSummary("Cambia el estatus de todos los empleados masivamente a ACTIVO o INACTIVO.");
 
-            // 7. Elimina TODOS los registros de la tabla de empleados
-            group.MapDelete("/vaciar-bd", async (IEmpleadoService empleadoService) =>
+            group.MapGet("/exportar-excel", async (ObtenerExportacionEmpleadosQueryHandler handler) =>
             {
-                int eliminados = await empleadoService.VaciarBaseDatosAsync();
-                return Results.Ok(new 
-                { 
-                    mensaje = "La base de datos de empleados ha sido vaciada completamente.", 
-                    totalEliminados = eliminados 
-                });
+                var resultado = await handler.HandleAsync();
+                return Results.File(resultado.Bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", resultado.NombreArchivo);
             })
-            .WithSummary("Elimina TODOS los registros de la tabla de empleados.");
+            .WithSummary("Exporta la lista de empleados a un archivo Excel (.xlsx).");
+
         }
     }
 }

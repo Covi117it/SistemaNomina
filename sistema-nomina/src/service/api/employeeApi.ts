@@ -77,10 +77,6 @@ export const employeeApi = {
     });
   },
 
-  clearDatabase: async (): Promise<void> => {
-    await axios.delete(`${ENDPOINTS.EMPLEADOS}/vaciar-bd`);
-  },
-
   fetchNextSuggestedCode: async (): Promise<string> => {
     const response = await axios.get(`${ENDPOINTS.EMPLEADOS}/siguiente-codigo`);
     return response.data.siguienteCodigo;

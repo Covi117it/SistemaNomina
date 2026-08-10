@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Swal from 'sweetalert2';
 import { NominaItem } from '../../types/nomina';
 import { formatCurrency } from '../../utils/formatters';
 import { FormSelect } from '../common/FormSelect';
 import { Mail, Clock } from 'lucide-react';
+import { Pagination } from '../common/Pagination';
 
 export interface ExtendedNominaItem extends NominaItem {
   excluido?: boolean;
@@ -25,6 +26,8 @@ export const DistributionTable: React.FC<DistributionTableProps> = ({
   onUpdateEmail,
   onToggleExclude,
 }) => {
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const safeItems = items || [];
 
   if (safeItems.length === 0) {
@@ -38,6 +41,13 @@ export const DistributionTable: React.FC<DistributionTableProps> = ({
     );
   }
 
+  const totalItems = safeItems.length;
+  const totalPages = Math.ceil(totalItems / pageSize) || 1;
+  const paginatedItems = safeItems.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
+
   return (
     <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm overflow-hidden">
       <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
@@ -45,7 +55,6 @@ export const DistributionTable: React.FC<DistributionTableProps> = ({
           <Mail className="w-4 h-4 text-emerald-600" />
           Lista de Destinatarios ({safeItems.length})
         </h3>
-
       </div>
 
       <div className="overflow-x-auto">
@@ -62,7 +71,7 @@ export const DistributionTable: React.FC<DistributionTableProps> = ({
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {safeItems.map((item, idx) => {
+            {paginatedItems.map((item, idx) => {
               const esInexistente =
                 !item.empleadoExiste ||
                 item.eStatusEmpleado === 'NO_EXISTE' ||
@@ -155,6 +164,19 @@ export const DistributionTable: React.FC<DistributionTableProps> = ({
           </tbody>
         </table>
       </div>
+
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={totalItems}
+        pageSize={pageSize}
+        onPageChange={setCurrentPage}
+        onPageSizeChange={(size) => {
+          setPageSize(size);
+          setCurrentPage(1);
+        }}
+        itemLabel="destinatarios"
+      />
     </div>
   );
 };

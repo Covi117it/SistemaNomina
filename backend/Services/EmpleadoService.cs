@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using backend.Data;
 using backend.Models;
+using ClosedXML.Excel;
 using Microsoft.EntityFrameworkCore;
 
 namespace backend.Services
@@ -228,11 +230,6 @@ namespace backend.Services
                 .ExecuteUpdateAsync(s => s
                     .SetProperty(e => e.EStatus, estatusNormalizado)
                     .SetProperty(e => e.FechaActualizacion, DateTime.UtcNow));
-        }
-
-        public async Task<int> VaciarBaseDatosAsync()
-        {
-            return await _db.Empleados.ExecuteDeleteAsync();
         }
 
         public async Task<string> ObtenerSiguienteCodigoSugeridoAsync()

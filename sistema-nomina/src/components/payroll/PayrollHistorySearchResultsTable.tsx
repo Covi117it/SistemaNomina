@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { FileText } from 'lucide-react';
 import { NominaItem } from '../../types/nomina';
 import { formatCurrency } from '../../utils/formatters';
+import { Pagination } from '../common/Pagination';
 
 interface PayrollHistorySearchResultsTableProps {
   detalles: any[];
@@ -14,6 +15,17 @@ export const PayrollHistorySearchResultsTable: React.FC<PayrollHistorySearchResu
   searchTerm,
   onSelectPdfItem,
 }) => {
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  const totalItems = detalles.length;
+  const totalPages = Math.ceil(totalItems / pageSize) || 1;
+
+  const paginatedDetalles = detalles.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
+
   return (
     <div>
       <div className="mb-4 pb-3 border-b border-slate-100 flex items-center justify-between">
@@ -43,7 +55,7 @@ export const PayrollHistorySearchResultsTable: React.FC<PayrollHistorySearchResu
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {detalles.map((det: any, idx: number) => (
+              {paginatedDetalles.map((det: any, idx: number) => (
                 <tr key={idx} className="hover:bg-slate-50 transition-colors">
                   <td className="p-3 font-bold text-slate-800">
                     #{det.periodoId} - {det.quincenaPeriodo} ({new Date(det.fechaProcesado).toLocaleDateString('es-DO')})
@@ -90,6 +102,19 @@ export const PayrollHistorySearchResultsTable: React.FC<PayrollHistorySearchResu
               ))}
             </tbody>
           </table>
+
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={(size) => {
+              setPageSize(size);
+              setCurrentPage(1);
+            }}
+            itemLabel="comprobantes"
+          />
         </div>
       )}
     </div>

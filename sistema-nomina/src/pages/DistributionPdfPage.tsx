@@ -40,7 +40,6 @@ export const DistributionPdfPage: React.FC<DistributionPdfPageProps> = ({
     showSmtpModal,
     setShowSmtpModal,
     dispatchResult,
-    periodoNombre,
     searchTerm,
     setSearchTerm,
     distributionFilter,
