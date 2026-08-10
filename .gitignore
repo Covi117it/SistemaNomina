@@ -22,3 +22,5 @@ appsettings.Development.json
 .vscode/
 *.user
 *.suo
+# Credenciales sensibles
+backend/google-credentials.json
