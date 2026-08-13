@@ -65,3 +65,21 @@ jobs:
             sistema-nomina/src-tauri/target/x86_64-apple-darwin/release/bundle/dmg/*.dmg
             sistema-nomina/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg
             sistema-nomina/src-tauri/target/release/bundle/dmg/*.dmg
+
+      - name: Create or Update GitHub Release for Auto-Updater
+        uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v0.1.1
+          name: Release v0.1.1 (Actualización MariaDB 24/7 Nube Aiven)
+          draft: false
+          prerelease: false
+          files: |
+            sistema-nomina/src-tauri/target/x86_64-apple-darwin/release/bundle/dmg/*.dmg
+            sistema-nomina/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg
+            sistema-nomina/src-tauri/target/x86_64-apple-darwin/release/bundle/macos/*.app.tar.gz*
+            sistema-nomina/src-tauri/target/aarch64-apple-darwin/release/bundle/macos/*.app.tar.gz*
+            sistema-nomina/src-tauri/target/x86_64-apple-darwin/release/bundle/latest.json
+            sistema-nomina/src-tauri/target/aarch64-apple-darwin/release/bundle/latest.json
+            sistema-nomina/src-tauri/target/release/bundle/latest.json
