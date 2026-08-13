@@ -66,4 +66,11 @@ app.MapEmpleadosEndPoints();
 app.MapNominaEndpoints(); 
 app.MapConfigEndpoints();
 
+// 5. Inicializar y sembrar la base de datos de empleados automáticamente al arrancar
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await DbInitializer.SeedAsync(dbContext);
+}
+
 app.Run();

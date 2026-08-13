@@ -1,17 +1,19 @@
-name: Build macOS Release
+name: Build macOS Release & Auto-Update
 
 on:
   push:
-    branches: [ main, master ]
+    tags:
+      - 'v*'
   workflow_dispatch:
 
 jobs:
-  build-mac:
+  release:
     runs-on: macos-latest
+    permissions:
+      contents: write
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Install .NET 10 SDK
         run: |
@@ -37,16 +39,14 @@ jobs:
           cd backend
           $HOME/.dotnet/dotnet publish -c Release -r osx-arm64 --self-contained true -p:PublishSingleFile=true
 
-      - name: Build Tauri Desktop App (.dmg)
-        run: |
-          cd sistema-nomina
-          pnpm install
-          pnpm tauri build
-
-      - name: Upload macOS Bundle Artifact
-        uses: actions/upload-artifact@v4
+      - name: Build Tauri App & Create GitHub Release
+        uses: tauri-apps/tauri-action@v0.5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          name: SistemaNomina-macOS
-          path: |
-            sistema-nomina/src-tauri/target/release/bundle/dmg/*.dmg
-            sistema-nomina/src-tauri/target/release/bundle/macos/*.app
+          projectPath: "./sistema-nomina"
+          tagName: ${{ github.ref_name }}
+          releaseName: "SistemaNomina ${{ github.ref_name }}"
+          releaseBody: "Actualización automática de Sistema Nómina"
+          draft: false
+          prerelease: false

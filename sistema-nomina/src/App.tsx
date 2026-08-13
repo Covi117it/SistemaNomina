@@ -4,6 +4,8 @@ import { usePayrollStaging } from './hooks/usePayrollStaging';
 import { employeeApi } from './service/api/employeeApi';
 import { Toast } from './components/Toast';
 import { Loader2 } from 'lucide-react';
+import { check } from '@tauri-apps/plugin-updater';
+import { relaunch } from '@tauri-apps/plugin-process';
 
 const DashboardPage = lazy(() => import('./pages/DashboardPage').then((m) => ({ default: m.DashboardPage })));
 const EmployeesPage = lazy(() => import('./pages/EmployeesPage').then((m) => ({ default: m.EmployeesPage })));
@@ -31,7 +33,24 @@ export type CurrentView =
   | 'create-event'
   | 'month-agenda';
 
-export default function App() {
+export function App() {
+
+  useEffect(() => {
+    async function checkForUpdates() {
+      try {
+        const update = await check();
+        if (update?.available) {
+          console.log(`Nueva versión disponible: ${update.version}`);
+          await update.downloadAndInstall();
+          await relaunch();
+        }
+      } catch (error) {
+        console.error('Error al comprobar actualizaciones:', error);
+      }
+    }
+    checkForUpdates();
+  }, []);
+  
   const [currentView, setCurrentView] = useState<CurrentView>('dashboard');
   const [selectedEventDate, setSelectedEventDate] = useState<string | undefined>(undefined);
   
@@ -269,3 +288,5 @@ export default function App() {
     </div>
   );
 }
+
+export default App;
