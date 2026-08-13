@@ -34,32 +34,19 @@ jobs:
         with:
           targets: aarch64-apple-darwin
 
-      - name: Build .NET Backend for macOS (ARM64 & x64)
+      - name: Build .NET Backend for macOS
         run: |
           cd backend
           dotnet publish -c Release -r osx-arm64 --self-contained true -p:PublishSingleFile=true
-          dotnet publish -c Release -r osx-x64 --self-contained true -p:PublishSingleFile=true
 
-      - name: Install Frontend Dependencies
+      - name: Build Tauri Desktop App (.dmg)
         run: |
           cd sistema-nomina
           pnpm install
-
-      - name: Build Tauri Desktop App
-        uses: tauri-apps/tauri-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          projectPath: "./sistema-nomina"
-          tagName: v0.1.0
-          releaseName: "SistemaNomina v0.1.0"
-          releaseBody: "Versión oficial para macOS"
-          releaseDraft: true
-          prerelease: false
+          pnpm tauri build
 
       - name: Upload macOS Bundle Artifact
         uses: actions/upload-artifact@v4
-        if: always()
         with:
           name: SistemaNomina-macOS
           path: |
