@@ -10,8 +10,14 @@ namespace backend.Data
     {
         public static async Task SeedAsync(AppDbContext context)
         {
-            // 1. Aplica migraciones pendientes y crea las tablas si no existen
-            await context.Database.MigrateAsync();
+            try
+            {
+                await context.Database.MigrateAsync();
+            }
+            catch
+            {
+                await context.Database.EnsureCreatedAsync();
+            }
 
             // 2. Si ya existen empleados registrados, no hace nada
             if (await context.Empleados.AnyAsync())

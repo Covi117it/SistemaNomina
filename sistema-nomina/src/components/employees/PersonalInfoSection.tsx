@@ -71,15 +71,31 @@ export const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
     return { nombre: parts.slice(0, 2).join(' '), apellido: parts.slice(2).join(' ') };
   };
 
-  const { nombre: currentNombre, apellido: currentApellido } = parseNombres(formData.nombres);
+  const [nombre, setNombre] = React.useState('');
+  const [apellido, setApellido] = React.useState('');
+  const lastCombinedRef = React.useRef<string | null>(null);
+
+  React.useEffect(() => {
+    const currentCombined = formData.nombres || '';
+    if (currentCombined !== lastCombinedRef.current) {
+      const parsed = parseNombres(currentCombined);
+      setNombre(parsed.nombre);
+      setApellido(parsed.apellido);
+      lastCombinedRef.current = currentCombined;
+    }
+  }, [formData.nombres]);
 
   const handleNombreChange = (newNombre: string) => {
-    const combined = `${newNombre} ${currentApellido}`.trim();
+    setNombre(newNombre);
+    const combined = `${newNombre.trim()} ${apellido.trim()}`.trim();
+    lastCombinedRef.current = combined;
     onChange('nombres', combined);
   };
 
   const handleApellidoChange = (newApellido: string) => {
-    const combined = `${currentNombre} ${newApellido}`.trim();
+    setApellido(newApellido);
+    const combined = `${nombre.trim()} ${newApellido.trim()}`.trim();
+    lastCombinedRef.current = combined;
     onChange('nombres', combined);
   };
 
@@ -115,7 +131,7 @@ export const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
             <input
               type="text"
               required
-              value={currentNombre}
+              value={nombre}
               onChange={(e) => handleNombreChange(e.target.value)}
               className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:border-emerald-500 focus:outline-none transition-all"
             />
@@ -128,7 +144,7 @@ export const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
             </label>
             <input
               type="text"
-              value={currentApellido}
+              value={apellido}
               onChange={(e) => handleApellidoChange(e.target.value)}
               className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:border-emerald-500 focus:outline-none transition-all"
             />
