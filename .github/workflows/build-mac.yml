@@ -81,6 +81,10 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            sistema-nomina/src-tauri/target/**/release/bundle/dmg/*.dmg
-            sistema-nomina/src-tauri/target/**/release/bundle/macos/*.app.tar.gz*
-            sistema-nomina/src-tauri/target/**/release/bundle/latest.json
+            sistema-nomina/src-tauri/target/x86_64-apple-darwin/release/bundle/dmg/*.dmg
+            sistema-nomina/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg
+            sistema-nomina/src-tauri/target/x86_64-apple-darwin/release/bundle/macos/*.app.tar.gz*
+            sistema-nomina/src-tauri/target/aarch64-apple-darwin/release/bundle/macos/*.app.tar.gz*
+            sistema-nomina/src-tauri/target/x86_64-apple-darwin/release/bundle/latest.json
+            sistema-nomina/src-tauri/target/aarch64-apple-darwin/release/bundle/latest.json
+            sistema-nomina/src-tauri/target/release/bundle/latest.json
