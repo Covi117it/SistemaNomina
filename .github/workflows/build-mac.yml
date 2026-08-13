@@ -33,22 +33,35 @@ jobs:
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-apple-darwin, aarch64-apple-darwin
 
-      - name: Build .NET Backend for macOS
+      - name: Build .NET Backend for Intel & Apple Silicon macOS
         run: |
           cd backend
+          $HOME/.dotnet/dotnet publish -c Release -r osx-x64 --self-contained true -p:PublishSingleFile=true
           $HOME/.dotnet/dotnet publish -c Release -r osx-arm64 --self-contained true -p:PublishSingleFile=true
 
-      - name: Build Tauri Desktop App (.dmg)
+      - name: Build Tauri Desktop App for Intel Mac (x86_64)
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
         run: |
           cd sistema-nomina
           pnpm install
-          pnpm tauri build
+          pnpm tauri build --target x86_64-apple-darwin
 
-      - name: Upload macOS Bundle Artifact
+      - name: Build Tauri Desktop App for Apple Silicon Mac (aarch64)
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+        run: |
+          cd sistema-nomina
+          pnpm tauri build --target aarch64-apple-darwin
+
+      - name: Upload macOS Bundle Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: SistemaNomina-macOS
           path: |
+            sistema-nomina/src-tauri/target/x86_64-apple-darwin/release/bundle/dmg/*.dmg
+            sistema-nomina/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg
             sistema-nomina/src-tauri/target/release/bundle/dmg/*.dmg
-            sistema-nomina/src-tauri/target/release/bundle/macos/*.app
