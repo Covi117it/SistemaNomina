@@ -1,0 +1,50 @@
+name: Build macOS Release
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build-mac:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Install Rust target
+        run: rustup target add aarch64-apple-darwin
+
+      - name: Build .NET Backend for macOS
+        run: |
+          cd backend
+          dotnet publish -c Release -r osx-arm64 --self-contained true -p:PublishSingleFile=true
+
+      - name: Build Tauri Desktop App (.dmg)
+        run: |
+          cd sistema-nomina
+          pnpm install
+          pnpm tauri build
+
+      - name: Upload macOS Bundle Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SistemaNomina-macOS
+          path: sistema-nomina/src-tauri/target/release/bundle/dmg/*.dmg
+

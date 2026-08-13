@@ -18,6 +18,7 @@ namespace backend.Data
     public DbSet<NominaPeriodo> NominaPeriodos => Set<NominaPeriodo>();
     public DbSet<NominaDetalle> NominaDetalles => Set<NominaDetalle>();
     public DbSet<ConfiguracionSistema> Configuraciones => Set<ConfiguracionSistema>();
+    public DbSet<EventoRecordatorio> EventosRecordatorios => Set<EventoRecordatorio>();
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

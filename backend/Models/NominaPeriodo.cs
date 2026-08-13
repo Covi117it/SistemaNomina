@@ -17,6 +17,8 @@ namespace backend.Models
     [StringLength(150)]
     public string Concepto { get; set; } = string.Empty;
     public DateTime FechaProcesado { get; set; } = DateTime.UtcNow;
+    [NotMapped]
+    public DateTime? FechaCorreosEnviados { get; set; }
     [Column(TypeName = "decimal(18,2)")]
     public decimal MontoTotalDevengado { get; set; }
     [Column(TypeName = "decimal(18,2)")]

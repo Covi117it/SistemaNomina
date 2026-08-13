@@ -10,6 +10,7 @@ interface CreateEmployeePageProps {
   nextSuggestedCode?: string;
   onSave: (empleado: Empleado) => Promise<void>;
   onBack: () => void;
+  onNavigateToDashboard?: () => void;
   onNavigateToDirectory?: () => void;
   onNavigateToCreate?: () => void;
   onNavigateToPayroll?: () => void;
@@ -23,6 +24,7 @@ export const CreateEmployeePage: React.FC<CreateEmployeePageProps> = ({
   nextSuggestedCode = '',
   onSave,
   onBack,
+  onNavigateToDashboard,
   onNavigateToDirectory,
   onNavigateToCreate,
   onNavigateToPayroll,
@@ -116,6 +118,7 @@ export const CreateEmployeePage: React.FC<CreateEmployeePageProps> = ({
           {onNavigateToCreate && (
             <ActionsDropdown
               currentView={isEditMode ? 'edit-employee' : 'create-employee'}
+              onNavigateToDashboard={onNavigateToDashboard}
               onNavigateToDirectory={onNavigateToDirectory}
               onNavigateToCreate={onNavigateToCreate}
               onNavigateToPayroll={onNavigateToPayroll}

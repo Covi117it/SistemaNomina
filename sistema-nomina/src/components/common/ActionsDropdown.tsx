@@ -3,15 +3,18 @@ import { Menu, X, Lightbulb, ChevronRight } from 'lucide-react';
 import { NAVIGATION_SECTIONS } from '../../constants/navigationOptions';
 
 export type ActiveView = 
+  | 'dashboard'
   | 'main-directory' 
   | 'create-employee' 
   | 'edit-employee' 
   | 'payroll-processing' 
   | 'payroll-history' 
-  | 'distribution-pdf';
+  | 'distribution-pdf'
+  | 'create-event';
 
 interface ActionsDropdownProps {
   currentView?: ActiveView;
+  onNavigateToDashboard?: () => void;
   onNavigateToCreate?: () => void;
   onNavigateToPayroll?: () => void;
   onNavigateToHistory?: () => void;
@@ -21,6 +24,7 @@ interface ActionsDropdownProps {
 
 export const ActionsDropdown: React.FC<ActionsDropdownProps> = ({
   currentView,
+  onNavigateToDashboard,
   onNavigateToCreate,
   onNavigateToPayroll,
   onNavigateToHistory,
@@ -46,6 +50,7 @@ export const ActionsDropdown: React.FC<ActionsDropdownProps> = ({
   }, [isOpen]);
 
   const callbacksMap: Record<string, (() => void) | undefined> = {
+    dashboard: onNavigateToDashboard,
     directory: onNavigateToDirectory,
     create: onNavigateToCreate,
     payroll: onNavigateToPayroll,
@@ -54,6 +59,7 @@ export const ActionsDropdown: React.FC<ActionsDropdownProps> = ({
   };
 
   const isVisibleMap: Record<string, boolean> = {
+    dashboard: currentView !== 'dashboard' && Boolean(onNavigateToDashboard),
     directory: currentView !== 'main-directory' && Boolean(onNavigateToDirectory),
     create: currentView !== 'create-employee' && currentView !== 'edit-employee' && Boolean(onNavigateToCreate),
     payroll: currentView !== 'payroll-processing' && Boolean(onNavigateToPayroll),
@@ -86,8 +92,12 @@ export const ActionsDropdown: React.FC<ActionsDropdownProps> = ({
 
           <div className="relative w-80 max-w-[85vw] bg-white text-slate-800 min-h-screen p-5 flex flex-col border-r border-slate-200/80 shadow-2xl z-50 animate-in slide-in-from-left duration-300">
             <div className="flex items-center justify-between pb-5 mb-5 border-b border-slate-100">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-emerald-50 text-emerald-600 border border-emerald-200/80 rounded-xl shadow-xs">
+              <div 
+                onClick={() => handleAction(onNavigateToDashboard)}
+                className="flex items-center gap-3 cursor-pointer group hover:opacity-85 transition-opacity"
+                title="Ir al Menú Principal"
+              >
+                <div className="p-2.5 bg-emerald-50 text-emerald-600 border border-emerald-200/80 rounded-xl shadow-xs group-hover:bg-emerald-100 transition-colors">
                   <Lightbulb className="w-6 h-6" />
                 </div>
                 <div>

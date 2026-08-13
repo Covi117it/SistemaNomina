@@ -2,8 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using backend.Data;
 using backend.DTOs;
 using backend.Services;
+using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 
 namespace backend.Application.Features.Nomina.Commands
 {
@@ -17,11 +20,13 @@ namespace backend.Application.Features.Nomina.Commands
     {
         private readonly IPdfService _pdfService;
         private readonly IEmailService _emailService;
+        private readonly AppDbContext _db;
 
-        public EnviarVolantesCommandHandler(IPdfService pdfService, IEmailService emailService)
+        public EnviarVolantesCommandHandler(IPdfService pdfService, IEmailService emailService, AppDbContext db)
         {
             _pdfService = pdfService;
             _emailService = emailService;
+            _db = db;
         }
 
         public async Task<IResult> HandleAsync(EnviarVolantesCommand command)
@@ -67,6 +72,21 @@ namespace backend.Application.Features.Nomina.Commands
             var resultados = await _emailService.EnviarVolantesMasivosAsync(tasks, command.ConceptoPeriodo, command.SmtpConfig);
             int exitosos = resultados.Count(r => r.Exitoso);
             int fallidos = resultados.Count(r => !r.Exitoso);
+
+            if (exitosos > 0)
+            {
+                var hoy = DateTime.Now;
+                var periodo = await _db.NominaPeriodos
+                    .Where(p => p.Mes == hoy.Month)
+                    .OrderByDescending(p => p.FechaProcesado)
+                    .FirstOrDefaultAsync();
+
+                if (periodo != null)
+                {
+                    periodo.FechaCorreosEnviados = DateTime.Now;
+                    await _db.SaveChangesAsync();
+                }
+            }
 
             return Results.Ok(new
             {

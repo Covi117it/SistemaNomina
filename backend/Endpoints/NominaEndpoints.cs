@@ -35,6 +35,33 @@ namespace backend.Endpoints
             )
             .WithSummary("Obtiene los registros históricos de nóminas guardadas en SQLite.");
 
+            // 3.1. Obtener Eventos del Calendario de Nóminas desde el Servidor
+            group.MapGet("/eventos-calendario", async (int? anio, int? mes, ObtenerEventosCalendarioQueryHandler handler) =>
+                await handler.HandleAsync(new ObtenerEventosCalendarioQuery(anio, mes))
+            )
+            .WithSummary("Obtiene los eventos y cálculos de nómina para el calendario en el servidor.");
+
+            // 3.2. Crear Nuevo Evento en MariaDB
+            group.MapPost("/eventos", async (CrearEventoDto dto, CrearEventoCommandHandler handler) =>
+                await handler.HandleAsync(new CrearEventoCommand(dto))
+            )
+            .WithSummary("Guarda un nuevo evento de la agenda en la base de datos MariaDB.")
+            .DisableAntiforgery();
+
+            // 3.3. Editar Evento Existente en MariaDB
+            group.MapPut("/eventos/{id:int}", async (int id, EditarEventoDto dto, EditarEventoCommandHandler handler) =>
+                await handler.HandleAsync(new EditarEventoCommand(id, dto))
+            )
+            .WithSummary("Actualiza un evento existente en la base de datos MariaDB.")
+            .DisableAntiforgery();
+
+            // 3.4. Eliminar Evento de MariaDB
+            group.MapDelete("/eventos/{id:int}", async (int id, EliminarEventoCommandHandler handler) =>
+                await handler.HandleAsync(new EliminarEventoCommand(id))
+            )
+            .WithSummary("Elimina un evento de la base de datos MariaDB.")
+            .DisableAntiforgery();
+
             // 4. Generar Volante PDF Individual
             group.MapPost("/generar-volante-pdf", (NominaItemDto item, string? conceptoPeriodo, IPdfService pdfService) =>
             {

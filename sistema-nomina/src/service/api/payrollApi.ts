@@ -52,4 +52,56 @@ export const payrollApi = {
     const response = await axios.post(`${ENDPOINTS.NOMINA}/recalcular`, items);
     return response.data;
   },
+
+  fetchCalendarEvents: async (anio: number, mes: number): Promise<{
+    anio: number;
+    mes: number;
+    nombreMes: string;
+    nextPayrollDay: number;
+    nextPayrollMonth: number;
+    nextPayrollQuincenaLabel: string;
+    eventos: {
+      day: number;
+      time: string;
+      title: string;
+      description: string;
+      badge: string;
+      eventType: 'payroll-pending' | 'pdf-dispatch' | 'payroll-completed';
+    }[];
+  }> => {
+    const response = await axios.get(`${ENDPOINTS.NOMINA}/eventos-calendario`, {
+      params: { anio, mes }
+    });
+    return response.data;
+  },
+
+  createEvent: async (payload: {
+    titulo: string;
+    subtitulo?: string;
+    fechaStr: string;
+    horaStr: string;
+    tipoEvento: string;
+    prioridad: string;
+    descripcion?: string;
+    adjuntoNombre?: string;
+    textoAccion?: string;
+  }): Promise<void> => {
+    await axios.post(`${ENDPOINTS.NOMINA}/eventos`, payload);
+  },
+
+  updateEvent: async (id: number | string, payload: {
+    titulo: string;
+    subtitulo?: string;
+    fechaStr: string;
+    horaStr: string;
+    tipoEvento: string;
+    prioridad: string;
+    descripcion?: string;
+  }): Promise<void> => {
+    await axios.put(`${ENDPOINTS.NOMINA}/eventos/${id}`, payload);
+  },
+
+  deleteEvent: async (id: number | string): Promise<void> => {
+    await axios.delete(`${ENDPOINTS.NOMINA}/eventos/${id}`);
+  },
 };

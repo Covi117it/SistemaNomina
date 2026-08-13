@@ -5,10 +5,13 @@ import { employeeApi } from './service/api/employeeApi';
 import { Toast } from './components/Toast';
 import { Loader2 } from 'lucide-react';
 
+const DashboardPage = lazy(() => import('./pages/DashboardPage').then((m) => ({ default: m.DashboardPage })));
 const EmployeesPage = lazy(() => import('./pages/EmployeesPage').then((m) => ({ default: m.EmployeesPage })));
 const CreateEmployeePage = lazy(() => import('./pages/CreateEmployeePage').then((m) => ({ default: m.CreateEmployeePage })));
 const PayrollManagementPage = lazy(() => import('./pages/PayrollManagementPage').then((m) => ({ default: m.PayrollManagementPage })));
 const DistributionPdfPage = lazy(() => import('./pages/DistributionPdfPage').then((m) => ({ default: m.DistributionPdfPage })));
+const CreateEventPage = lazy(() => import('./pages/CreateEventPage').then((m) => ({ default: m.CreateEventPage })));
+const MonthAgendaPage = lazy(() => import('./pages/MonthAgendaPage').then((m) => ({ default: m.MonthAgendaPage })));
 
 const PageLoader = () => (
   <div className="min-h-[400px] flex flex-col items-center justify-center gap-3 p-8">
@@ -18,15 +21,19 @@ const PageLoader = () => (
 );
 
 export type CurrentView = 
+  | 'dashboard'
   | 'main-directory'
   | 'create-employee'
   | 'edit-employee'
   | 'payroll-processing'
   | 'payroll-history'
-  | 'distribution-pdf';
+  | 'distribution-pdf'
+  | 'create-event'
+  | 'month-agenda';
 
 export default function App() {
-  const [currentView, setCurrentView] = useState<CurrentView>('main-directory');
+  const [currentView, setCurrentView] = useState<CurrentView>('dashboard');
+  const [selectedEventDate, setSelectedEventDate] = useState<string | undefined>(undefined);
   
   const {
     dbEmployees,
@@ -71,6 +78,9 @@ export default function App() {
   const [nextSuggestedCode, setNextSuggestedCode] = useState<string>('001');
 
   useEffect(() => {
+    if (currentView === 'dashboard' || currentView === 'main-directory') {
+      fetchDbEmployees();
+    }
     if (currentView === 'create-employee') {
       employeeApi.fetchNextSuggestedCode().then((code) => {
         if (code) setNextSuggestedCode(code);
@@ -90,6 +100,29 @@ export default function App() {
       )}
 
       <Suspense fallback={<PageLoader />}>
+        {currentView === 'dashboard' && (
+          <DashboardPage
+            totalTotal={totalTotal}
+            totalActivos={totalActivos}
+            totalInactivos={totalInactivos}
+            loadingEmployees={loadingEmployees}
+            onNavigateToDirectory={() => setCurrentView('main-directory')}
+            onNavigateToCreate={() => {
+              setSelectedEmpleado(null);
+              setCurrentView('create-employee');
+            }}
+            onNavigateToPayroll={() => setCurrentView('payroll-processing')}
+            onNavigateToHistory={() => setCurrentView('payroll-history')}
+            onNavigateToDistribution={() => setCurrentView('distribution-pdf')}
+            onNavigateToCreateEvent={(dateStr?: string) => {
+              setSelectedEventDate(dateStr);
+              setCurrentView('create-event');
+            }}
+            onNavigateToMonthAgenda={() => {
+              setCurrentView('month-agenda');
+            }}
+          />
+        )}
         {currentView === 'main-directory' && (
           <EmployeesPage
             employees={dbEmployees}
@@ -120,6 +153,7 @@ export default function App() {
               setCurrentView('edit-employee');
             }}
             onDeleteClick={handleDeleteIndividualEmpleado}
+            onNavigateToDashboard={() => setCurrentView('dashboard')}
             onNavigateToCreate={() => {
               setSelectedEmpleado(null);
               setCurrentView('create-employee');
@@ -143,6 +177,7 @@ export default function App() {
               setSelectedEmpleado(null);
               setCurrentView('main-directory');
             }}
+            onNavigateToDashboard={() => setCurrentView('dashboard')}
             onNavigateToDirectory={() => setCurrentView('main-directory')}
             onNavigateToCreate={() => {
               setSelectedEmpleado(null);
@@ -170,6 +205,7 @@ export default function App() {
                 setCurrentView('distribution-pdf');
               }
             }}
+            onNavigateToDashboard={() => setCurrentView('dashboard')}
             onNavigateToDirectory={() => setCurrentView('main-directory')}
             onNavigateToCreate={() => {
               setSelectedEmpleado(null);
@@ -179,14 +215,46 @@ export default function App() {
             onNavigateToHistory={() => setCurrentView('payroll-history')}
             onNavigateToDistribution={() => setCurrentView('distribution-pdf')}
             onCancelStaging={cancelStaging}
-            onBack={() => setCurrentView('main-directory')}
+            onBack={() => setCurrentView('dashboard')}
           />
         )}
 
         {currentView === 'distribution-pdf' && (
           <DistributionPdfPage
             items={previewNominaData?.items}
-            onBack={() => setCurrentView('main-directory')}
+            onBack={() => setCurrentView('dashboard')}
+            onNavigateToDashboard={() => setCurrentView('dashboard')}
+            onNavigateToDirectory={() => setCurrentView('main-directory')}
+            onNavigateToCreate={() => {
+              setSelectedEmpleado(null);
+              setCurrentView('create-employee');
+            }}
+            onNavigateToPayroll={() => setCurrentView('payroll-processing')}
+            onNavigateToHistory={() => setCurrentView('payroll-history')}
+            onNavigateToDistribution={() => setCurrentView('distribution-pdf')}
+          />
+        )}
+
+        {currentView === 'create-event' && (
+          <CreateEventPage
+            selectedDate={selectedEventDate}
+            onBack={() => setCurrentView('dashboard')}
+            onNavigateToDashboard={() => setCurrentView('dashboard')}
+            onNavigateToDirectory={() => setCurrentView('main-directory')}
+            onNavigateToCreate={() => {
+              setSelectedEmpleado(null);
+              setCurrentView('create-employee');
+            }}
+            onNavigateToPayroll={() => setCurrentView('payroll-processing')}
+            onNavigateToHistory={() => setCurrentView('payroll-history')}
+            onNavigateToDistribution={() => setCurrentView('distribution-pdf')}
+          />
+        )}
+
+        {currentView === 'month-agenda' && (
+          <MonthAgendaPage
+            onBack={() => setCurrentView('dashboard')}
+            onNavigateToDashboard={() => setCurrentView('dashboard')}
             onNavigateToDirectory={() => setCurrentView('main-directory')}
             onNavigateToCreate={() => {
               setSelectedEmpleado(null);

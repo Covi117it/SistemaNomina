@@ -28,6 +28,7 @@ interface EmployeesPageProps {
   onEstatusChange: (emp: Empleado, estatus: string) => void;
   onEditClick: (emp: Empleado) => void;
   onDeleteClick: (codigo: string) => void;
+  onNavigateToDashboard?: () => void;
   onNavigateToCreate: () => void;
   onNavigateToPayroll: () => void;
   onNavigateToHistory: () => void;
@@ -57,6 +58,7 @@ export const EmployeesPage: React.FC<EmployeesPageProps> = ({
   onEstatusChange,
   onEditClick,
   onDeleteClick,
+  onNavigateToDashboard,
   onNavigateToCreate,
   onNavigateToPayroll,
   onNavigateToHistory,
@@ -69,6 +71,7 @@ export const EmployeesPage: React.FC<EmployeesPageProps> = ({
       <div className="flex items-center gap-3">
         <ActionsDropdown
           currentView="main-directory"
+          onNavigateToDashboard={onNavigateToDashboard}
           onNavigateToCreate={onNavigateToCreate}
           onNavigateToPayroll={onNavigateToPayroll}
           onNavigateToHistory={onNavigateToHistory}

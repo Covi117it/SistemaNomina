@@ -106,11 +106,9 @@ export const useEmployees = () => {
     setUpdatingCodigo(empleado.codigo);
     try {
       await employeeApi.updateEmployee(empleado.codigo, empleadoActualizado);
-      setDbEmployees((prev) =>
-        prev.map((item) => (item.codigo === empleado.codigo ? empleadoActualizado : item))
-      );
+      await fetchDbEmployees();
     } catch (err) {
-      fetchDbEmployees();
+      await fetchDbEmployees();
     } finally {
       setUpdatingCodigo(null);
     }

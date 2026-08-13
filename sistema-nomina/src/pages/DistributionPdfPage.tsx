@@ -17,6 +17,7 @@ interface DistributionPdfPageProps {
   conceptoPeriodo?: string;
   onBack: () => void;
   onSuccessDispatch?: () => void;
+  onNavigateToDashboard?: () => void;
   onNavigateToDirectory?: () => void;
   onNavigateToCreate?: () => void;
   onNavigateToPayroll?: () => void;
@@ -28,6 +29,7 @@ export const DistributionPdfPage: React.FC<DistributionPdfPageProps> = ({
   items = [],
   conceptoPeriodo = '',
   onBack,
+  onNavigateToDashboard,
   onNavigateToDirectory,
   onNavigateToCreate,
   onNavigateToPayroll,
@@ -68,6 +70,7 @@ export const DistributionPdfPage: React.FC<DistributionPdfPageProps> = ({
           onNavigateToCreate && (
             <ActionsDropdown
               currentView="distribution-pdf"
+              onNavigateToDashboard={onNavigateToDashboard}
               onNavigateToDirectory={onNavigateToDirectory}
               onNavigateToCreate={onNavigateToCreate}
               onNavigateToPayroll={onNavigateToPayroll}

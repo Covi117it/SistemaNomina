@@ -1,4 +1,4 @@
-import { Users, UserPlus, UploadCloud, History, FileText } from 'lucide-react';
+import { Users, UserPlus, UploadCloud, History, FileText, LayoutDashboard } from 'lucide-react';
 
 export interface NavigationItem {
   id: string;
@@ -18,6 +18,22 @@ export interface NavigationSection {
 }
 
 export const NAVIGATION_SECTIONS = [
+  {
+    title: 'General',
+    items: [
+      {
+        id: 'dashboard',
+        label: 'Menú Principal',
+        icon: LayoutDashboard,
+        iconBg: 'bg-emerald-50',
+        iconColor: 'text-emerald-600',
+        hoverBg: 'hover:bg-emerald-50/80',
+        hoverText: 'hover:text-emerald-800',
+        hoverIconBg: 'group-hover:bg-emerald-500',
+        hoverIconColor: 'group-hover:text-white',
+      },
+    ],
+  },
   {
     title: 'Empleados y Personal',
     items: [

@@ -14,6 +14,7 @@ interface PayrollManagementPageProps {
   onFileUpload: (file: File) => Promise<void>;
   onUpdatePayrollItem: (index: number, field: keyof NominaItem, value: any) => void;
   onConfirmSavePayroll: (quincena?: string, mes?: number) => Promise<void>;
+  onNavigateToDashboard?: () => void;
   onNavigateToDirectory?: () => void;
   onNavigateToCreate?: () => void;
   onNavigateToPayroll?: () => void;
@@ -32,6 +33,7 @@ export const PayrollManagementPage: React.FC<PayrollManagementPageProps> = ({
   onFileUpload,
   onUpdatePayrollItem,
   onConfirmSavePayroll,
+  onNavigateToDashboard,
   onNavigateToDirectory,
   onNavigateToCreate,
   onNavigateToPayroll,
@@ -56,6 +58,7 @@ export const PayrollManagementPage: React.FC<PayrollManagementPageProps> = ({
           onNavigateToCreate && (
             <ActionsDropdown
               currentView={activeSubTab === 'history' ? 'payroll-history' : 'payroll-processing'}
+              onNavigateToDashboard={onNavigateToDashboard}
               onNavigateToDirectory={onNavigateToDirectory}
               onNavigateToCreate={onNavigateToCreate}
               onNavigateToPayroll={onNavigateToPayroll}

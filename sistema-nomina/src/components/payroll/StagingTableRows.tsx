@@ -20,14 +20,14 @@ export const StagingTableRows: React.FC<StagingTableRowsProps> = ({
           <tr>
             <th className="py-3 px-3">Cruce BD</th>
             <th className="py-3 px-3">Código</th>
-            <th className="py-3 px-3">Empleado (Desde BD)</th>
+            <th className="py-3 px-3">Empleado</th>
             <th className="py-3 px-3">Puesto</th>
             <th className="py-3 px-3">Correo Destinatario</th>
             <th className="py-3 px-3 text-right">Sueldo Base</th>
             <th className="py-3 px-3 text-right">Total Devengado</th>
             <th className="py-3 px-3 text-right">Total Deducciones</th>
             <th className="py-3 px-3 text-right">Neto a Pagar</th>
-            <th className="py-3 px-3 text-center">Volante PDF</th>
+            <th className="py-3 px-3 text-center">Volante</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100 bg-white">
