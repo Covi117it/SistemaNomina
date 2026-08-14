@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using backend.Data;
+using backend.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 
@@ -44,14 +45,22 @@ namespace backend.Application.Features.Nomina.Queries
 
             if (esMesActual)
             {
-                // 1. Consultar históricos de nóminas procesadas en MariaDB para este mes
-                var periodosHistorial = await _db.NominaPeriodos
-                    .Include(p => p.Detalles)
-                    .Where(p => p.Mes == targetMes)
-                    .AsNoTracking()
-                    .ToListAsync();
+                NominaPeriodo? periodoActual = null;
+                try
+                {
+                    // 1. Consultar históricos de nóminas procesadas en MariaDB para este mes
+                    var periodosHistorial = await _db.NominaPeriodos
+                        .Include(p => p.Detalles)
+                        .Where(p => p.Mes == targetMes)
+                        .AsNoTracking()
+                        .ToListAsync();
 
-                var periodoActual = periodosHistorial.FirstOrDefault(p => p.Quincena == currentQuincenaCode);
+                    periodoActual = periodosHistorial.FirstOrDefault(p => p.Quincena == currentQuincenaCode);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[Warning] No se pudieron cargar los periodos de nómina: {ex.Message}");
+                }
 
                 // EVALUACIÓN DE REGLAS DE ELIMINACIÓN/COMPLETADO DE EVENTOS AUTOMÁTICOS:
                 // A) Evento "Subir / Procesar Nómina":
@@ -121,30 +130,37 @@ namespace backend.Application.Features.Nomina.Queries
             }
 
             // 3. Consultar eventos personalizados creados por usuarios en MariaDB para el año y mes solicitados
-            var eventosUsuarios = await _db.EventosRecordatorios
-                .Where(e => e.FechaHora.Year == targetAnio && e.FechaHora.Month == targetMes)
-                .OrderBy(e => e.FechaHora)
-                .AsNoTracking()
-                .ToListAsync();
-
-            foreach (var evt in eventosUsuarios)
+            try
             {
-                eventosList.Add(new
+                var eventosUsuarios = await _db.EventosRecordatorios
+                    .Where(e => e.FechaHora.Year == targetAnio && e.FechaHora.Month == targetMes)
+                    .OrderBy(e => e.FechaHora)
+                    .AsNoTracking()
+                    .ToListAsync();
+
+                foreach (var evt in eventosUsuarios)
                 {
-                    id = evt.Id.ToString(),
-                    day = evt.FechaHora.Day,
-                    dateStr = evt.FechaHora.ToString("yyyy-MM-dd"),
-                    time = evt.FechaHora.ToString("hh:mm tt"),
-                    startTime = evt.FechaHora.ToString("HH:mm"),
-                    title = evt.Titulo,
-                    subtitle = evt.Subtitulo,
-                    description = evt.Descripcion,
-                    badge = evt.Prioridad,
-                    eventType = evt.TipoEvento,
-                    priority = evt.Prioridad,
-                    attachmentName = evt.AdjuntoNombre,
-                    actionText = evt.TextoAccion,
-                });
+                    eventosList.Add(new
+                    {
+                        id = evt.Id.ToString(),
+                        day = evt.FechaHora.Day,
+                        dateStr = evt.FechaHora.ToString("yyyy-MM-dd"),
+                        time = evt.FechaHora.ToString("hh:mm tt"),
+                        startTime = evt.FechaHora.ToString("HH:mm"),
+                        title = evt.Titulo,
+                        subtitle = evt.Subtitulo,
+                        description = evt.Descripcion,
+                        badge = evt.Prioridad,
+                        eventType = evt.TipoEvento,
+                        priority = evt.Prioridad,
+                        attachmentName = evt.AdjuntoNombre,
+                        actionText = evt.TextoAccion,
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Warning] No se pudieron cargar los eventos personalizados: {ex.Message}");
             }
 
             return Results.Ok(new

@@ -36,8 +36,8 @@ namespace backend.Endpoints
             .WithSummary("Obtiene los registros históricos de nóminas guardadas en SQLite.");
 
             // 3.1. Obtener Eventos del Calendario de Nóminas desde el Servidor
-            group.MapGet("/eventos-calendario", async (int? anio, int? mes, ObtenerEventosCalendarioQueryHandler handler) =>
-                await handler.HandleAsync(new ObtenerEventosCalendarioQuery(anio, mes))
+            group.MapGet("/eventos-calendario", async (int? anio, int? mes, int? year, int? month, ObtenerEventosCalendarioQueryHandler handler) =>
+                await handler.HandleAsync(new ObtenerEventosCalendarioQuery(anio ?? year, mes ?? month))
             )
             .WithSummary("Obtiene los eventos y cálculos de nómina para el calendario en el servidor.");
 
