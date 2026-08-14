@@ -51,7 +51,7 @@ export const useCalendarEvents = (targetDateStr?: string) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<CalendarEventItem | null>(null);
 
-  const loadEventsFromApi = async () => {
+  const loadEventsFromApi = async (retries = 3) => {
     try {
       const today = new Date();
       let year = today.getFullYear();
@@ -86,6 +86,9 @@ export const useCalendarEvents = (targetDateStr?: string) => {
       }
     } catch (err) {
       console.warn('Error al cargar eventos de MariaDB:', err);
+      if (retries > 0) {
+        setTimeout(() => loadEventsFromApi(retries - 1), 1500);
+      }
     }
   };
 
