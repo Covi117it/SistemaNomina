@@ -50,7 +50,8 @@ pub fn run() {
                         }
                     }
 
-                    let working_dir = backend_exe.parent().unwrap_or(&std::path::PathBuf::from("."));
+                    let default_dir = std::path::PathBuf::from(".");
+                    let working_dir = backend_exe.parent().unwrap_or(&default_dir);
                     let _ = Command::new(&backend_exe)
                         .current_dir(working_dir)
                         .spawn();
