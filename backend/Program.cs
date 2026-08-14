@@ -7,6 +7,7 @@ using backend.Services;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.WebHost.UseUrls("http://localhost:5289");
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 ServerVersion serverVersion;
 try
@@ -81,4 +82,4 @@ using (var scope = app.Services.CreateScope())
     await DbInitializer.SeedAsync(dbContext);
 }
 
-app.Run();
+app.Run();  
