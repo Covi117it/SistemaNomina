@@ -29,11 +29,25 @@ export const PayrollHistoryDetail: React.FC<PayrollHistoryDetailProps> = ({
     }).format(amount || 0);
   };
 
+  const getSueldoYDevengado = (det: any) => {
+    let sueldo = det.sueldoPeriodo || 0;
+    let devengado = det.totalDevengado || 0;
+    const extras = (det.incentivo || 0) + (det.reembolso || 0) + (det.horasExtras || 0);
+
+    if (sueldo <= 0 && devengado > 0) {
+      sueldo = Math.max(0, devengado - extras);
+    } else if (devengado <= 0 && sueldo > 0) {
+      devengado = sueldo + extras;
+    }
+    return { sueldo, devengado };
+  };
+
   const handleSendSingleEmail = async (det: any) => {
+    const { sueldo, devengado } = getSueldoYDevengado(det);
     const itemToDispatch: NominaItem = {
       codigoEmpleado: det.codigoEmpleado,
       nombreEmpleado: det.nombreEmpleadoSnapshot,
-      sueldoBase: det.sueldoPeriodo || 0,
+      sueldoBase: sueldo,
       quincena: period.quincena || '1Q',
       incentivo: det.incentivo || 0,
       reembolso: det.reembolso || 0,
@@ -45,7 +59,7 @@ export const PayrollHistoryDetail: React.FC<PayrollHistoryDetailProps> = ({
       sfs: det.sfs || 0,
       afp: det.afp || 0,
       isr: det.isr || 0,
-      totalDevengado: det.totalDevengado || 0,
+      totalDevengado: devengado,
       totalDeducciones: det.totalDeducciones || 0,
       netoAPagar: det.netoPagado || 0,
       emailDestinatario: det.emailDestinatario,
@@ -168,6 +182,7 @@ export const PayrollHistoryDetail: React.FC<PayrollHistoryDetailProps> = ({
               {paginatedDetalles?.map((det: any) => {
                 const isSending = sendingId === det.id;
                 const isSent = sentIds.has(det.id);
+                const { sueldo, devengado } = getSueldoYDevengado(det);
 
                 return (
                   <tr key={det.id} className="hover:bg-slate-50">
@@ -180,8 +195,8 @@ export const PayrollHistoryDetail: React.FC<PayrollHistoryDetailProps> = ({
                     <td className="p-3 font-mono font-bold text-emerald-600">{det.codigoEmpleado}</td>
                     <td className="p-3 font-bold text-slate-900">{det.nombreEmpleadoSnapshot}</td>
                     <td className="p-3 text-slate-500 font-mono">{det.emailDestinatario || 'N/A'}</td>
-                    <td className="p-3 text-right font-mono">{formatCurrency(det.sueldoPeriodo)}</td>
-                    <td className="p-3 text-right font-mono font-bold text-slate-800">{formatCurrency(det.totalDevengado)}</td>
+                    <td className="p-3 text-right font-mono">{formatCurrency(sueldo)}</td>
+                    <td className="p-3 text-right font-mono font-bold text-slate-800">{formatCurrency(devengado)}</td>
                     <td className="p-3 text-right font-mono text-slate-600">{formatCurrency(det.totalDeducciones)}</td>
                     <td className="p-3 text-right font-mono font-bold text-emerald-700">{formatCurrency(det.netoPagado)}</td>
                     <td className="p-3 text-center">
@@ -191,7 +206,7 @@ export const PayrollHistoryDetail: React.FC<PayrollHistoryDetailProps> = ({
                             onSelectPdfItem({
                               codigoEmpleado: det.codigoEmpleado,
                               nombreEmpleado: det.nombreEmpleadoSnapshot,
-                              sueldoBase: det.sueldoPeriodo,
+                              sueldoBase: sueldo,
                               quincena: period.quincena,
                               incentivo: det.incentivo || 0,
                               reembolso: det.reembolso || 0,
@@ -203,7 +218,7 @@ export const PayrollHistoryDetail: React.FC<PayrollHistoryDetailProps> = ({
                               sfs: det.sfs || 0,
                               afp: det.afp || 0,
                               isr: det.isr || 0,
-                              totalDevengado: det.totalDevengado,
+                              totalDevengado: devengado,
                               totalDeducciones: det.totalDeducciones,
                               netoAPagar: det.netoPagado,
                               emailDestinatario: det.emailDestinatario,

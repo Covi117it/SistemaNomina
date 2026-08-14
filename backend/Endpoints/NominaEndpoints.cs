@@ -67,6 +67,15 @@ namespace backend.Endpoints
             {
                 if (item == null) return Results.BadRequest(new { mensaje = "Los datos del empleado son requeridos." });
 
+                if (item.SueldoBase <= 0 && item.TotalDevengado > 0)
+                {
+                    item.SueldoBase = Math.Max(0m, item.TotalDevengado - (item.Incentivo + item.Reembolso + item.HorasExtras));
+                }
+                else if (item.TotalDevengado <= 0 && item.SueldoBase > 0)
+                {
+                    item.TotalDevengado = item.SueldoBase + item.Incentivo + item.Reembolso + item.HorasExtras;
+                }
+
                 // Generar concepto dinámico si no fue enviado
                 string ordenQuincena = DateTime.UtcNow.Day <= 15 ? "Primera" : "Segunda";
                 string conceptoFallback = $"{ordenQuincena} Quincena - Mes {DateTime.UtcNow.Month} {DateTime.UtcNow.Year}";
@@ -111,6 +120,15 @@ namespace backend.Endpoints
 
                 foreach (var item in itemsNomina)
                 {
+                    if (item.SueldoBase <= 0 && item.TotalDevengado > 0)
+                    {
+                        item.SueldoBase = Math.Max(0m, item.TotalDevengado - (item.Incentivo + item.Reembolso + item.HorasExtras));
+                    }
+                    else if (item.TotalDevengado <= 0 && item.SueldoBase > 0)
+                    {
+                        item.TotalDevengado = item.SueldoBase + item.Incentivo + item.Reembolso + item.HorasExtras;
+                    }
+
                     item.NetoAPagar = item.TotalDevengado - item.TotalDeducciones;
                     totalDevengado += item.TotalDevengado;
                     totalDeducciones += item.TotalDeducciones;

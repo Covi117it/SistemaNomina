@@ -18,6 +18,19 @@ export const PayrollHistorySearchResultsTable: React.FC<PayrollHistorySearchResu
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
+  const getSueldoYDevengado = (det: any) => {
+    let sueldo = det.sueldoPeriodo || 0;
+    let devengado = det.totalDevengado || 0;
+    const extras = (det.incentivo || 0) + (det.reembolso || 0) + (det.horasExtras || 0);
+
+    if (sueldo <= 0 && devengado > 0) {
+      sueldo = Math.max(0, devengado - extras);
+    } else if (devengado <= 0 && sueldo > 0) {
+      devengado = sueldo + extras;
+    }
+    return { sueldo, devengado };
+  };
+
   const totalItems = detalles.length;
   const totalPages = Math.ceil(totalItems / pageSize) || 1;
 
@@ -55,7 +68,9 @@ export const PayrollHistorySearchResultsTable: React.FC<PayrollHistorySearchResu
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {paginatedDetalles.map((det: any, idx: number) => (
+              {paginatedDetalles.map((det: any, idx: number) => {
+                const { sueldo, devengado } = getSueldoYDevengado(det);
+                return (
                 <tr key={idx} className="hover:bg-slate-50 transition-colors">
                   <td className="p-3 font-bold text-slate-800">
                     #{det.periodoId} - {det.quincenaPeriodo} ({new Date(det.fechaProcesado).toLocaleDateString('es-DO')})
@@ -63,8 +78,8 @@ export const PayrollHistorySearchResultsTable: React.FC<PayrollHistorySearchResu
                   <td className="p-3 font-mono font-bold text-emerald-600">{det.codigoEmpleado}</td>
                   <td className="p-3 font-bold text-slate-900">{det.nombreEmpleadoSnapshot}</td>
                   <td className="p-3 text-slate-500 font-mono">{det.emailDestinatario || '-'}</td>
-                  <td className="p-3 text-right font-mono">{formatCurrency(det.sueldoPeriodo)}</td>
-                  <td className="p-3 text-right font-mono">{formatCurrency(det.totalDevengado)}</td>
+                  <td className="p-3 text-right font-mono">{formatCurrency(sueldo)}</td>
+                  <td className="p-3 text-right font-mono">{formatCurrency(devengado)}</td>
                   <td className="p-3 text-right font-mono text-slate-500">{formatCurrency(det.totalDeducciones)}</td>
                   <td className="p-3 text-right font-mono font-bold text-emerald-700">{formatCurrency(det.netoPagado)}</td>
                   <td className="p-3 text-center">
@@ -73,7 +88,7 @@ export const PayrollHistorySearchResultsTable: React.FC<PayrollHistorySearchResu
                         onSelectPdfItem({
                           codigoEmpleado: det.codigoEmpleado,
                           nombreEmpleado: det.nombreEmpleadoSnapshot,
-                          sueldoBase: det.sueldoPeriodo,
+                          sueldoBase: sueldo,
                           quincena: det.quincenaPeriodo,
                           incentivo: det.incentivo,
                           reembolso: det.reembolso,
@@ -85,7 +100,7 @@ export const PayrollHistorySearchResultsTable: React.FC<PayrollHistorySearchResu
                           sfs: det.sfs,
                           afp: det.afp,
                           isr: det.isr,
-                          totalDevengado: det.totalDevengado,
+                          totalDevengado: devengado,
                           totalDeducciones: det.totalDeducciones,
                           netoAPagar: det.netoPagado,
                           emailDestinatario: det.emailDestinatario,
@@ -99,7 +114,8 @@ export const PayrollHistorySearchResultsTable: React.FC<PayrollHistorySearchResu
                     </button>
                   </td>
                 </tr>
-              ))}
+              );
+            })}
             </tbody>
           </table>
 

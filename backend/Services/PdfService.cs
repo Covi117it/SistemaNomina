@@ -17,11 +17,23 @@ namespace backend.Services
         [Obsolete]
         public byte[] GenerarVolantePdf(NominaItemDto item, string conceptoPeriodo)
         {
+            decimal sueldoBase = item.SueldoBase;
+            decimal totalDevengado = item.TotalDevengado;
+
+            if (sueldoBase <= 0 && totalDevengado > 0)
+            {
+                sueldoBase = Math.Max(0m, totalDevengado - (item.Incentivo + item.Reembolso + item.HorasExtras));
+            }
+            else if (totalDevengado <= 0 && sueldoBase > 0)
+            {
+                totalDevengado = sueldoBase + item.Incentivo + item.Reembolso + item.HorasExtras;
+            }
+
             var detalle = new NominaDetalle
             {
                 CodigoEmpleado = item.CodigoEmpleado,
                 NombreEmpleadoSnapshot = item.NombreEmpleado ?? "EMPLEADO",
-                SueldoPeriodo = item.SueldoBase,
+                SueldoPeriodo = sueldoBase,
                 Incentivo = item.Incentivo,
                 Reembolso = item.Reembolso,
                 HorasExtras = item.HorasExtras,
@@ -32,7 +44,7 @@ namespace backend.Services
                 Sfs = item.Sfs,
                 Afp = item.Afp,
                 Isr = item.Isr,
-                TotalDevengado = item.TotalDevengado,
+                TotalDevengado = totalDevengado,
                 TotalDeducciones = item.TotalDeducciones,
                 NetoPagado = item.NetoAPagar
             };

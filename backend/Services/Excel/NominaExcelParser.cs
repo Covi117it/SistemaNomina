@@ -36,8 +36,12 @@ namespace backend.Services.Excel
                             }
                         }
 
-                        // Continuar escaneando hasta detectar las subcolumnas de la Fila 2
-                        if (colMap.ContainsKey("PERIODO") || colMap.ContainsKey("SFS") || colMap.ContainsKey("INCENTIVO"))
+                        // Continuar escaneando hasta detectar subcolumnas o encabezados estándar
+                        if (colMap.ContainsKey("PERIODO") || colMap.ContainsKey("SUELDO") || colMap.ContainsKey("SUELDO BASE") ||
+                            colMap.ContainsKey("SALARIO") || colMap.ContainsKey("SALARIO BASE") || colMap.ContainsKey("DEVENGADO") ||
+                            colMap.ContainsKey("TOTAL DEVENGADO") || colMap.ContainsKey("SFS") || colMap.ContainsKey("AFP") ||
+                            colMap.ContainsKey("ISR") || colMap.ContainsKey("INCENTIVO") || colMap.ContainsKey("CODIGO") ||
+                            colMap.ContainsKey("CODIGO EMPLEADO") || colMap.ContainsKey("NETO") || colMap.ContainsKey("NETO A PAGAR"))
                         {
                             mapaCreado = true;
                         }
@@ -47,16 +51,41 @@ namespace backend.Services.Excel
                     string? codigo = ExcelHelper.ObtenerValorString(reader, colMap, "CODIGO EMPLEADO", "CODIGO", "CODIGO_EMPLEADO");
                     if (string.IsNullOrWhiteSpace(codigo)) continue;
 
+                    decimal sueldoBaseParsed = ExcelHelper.ObtenerValorDecimal(reader, colMap,
+                        "SUELDO BASE", "SUELDO_BASE", "SALARIO BASE", "SALARIO_BASE",
+                        "SUELDO QUINCENAL", "SALARIO QUINCENAL", "SUELDO BRUTO", "SALARIO BRUTO",
+                        "SUELDO PERIODO", "SALARIO PERIODO", "MONTO PERIODO", "PERIODO",
+                        "SUELDO", "SALARIO", "DEVENGADO BASE", "MONTO BASE", "BASE");
+
+                    decimal totalDevengadoParsed = ExcelHelper.ObtenerValorDecimal(reader, colMap,
+                        "TOTAL DEVENGADO", "TOTAL_DEVENGADO", "DEVENGADO", "DEVENGADOS",
+                        "TOTAL DEVENGADOS", "MONTO DEVENGADO", "DEVENGADO TOTAL");
+
+                    decimal incentivo = ExcelHelper.ObtenerValorDecimal(reader, colMap, "INCENTIVO");
+                    decimal reembolso = ExcelHelper.ObtenerValorDecimal(reader, colMap, "REEMBOLSO");
+                    decimal horasExtras = ExcelHelper.ObtenerValorDecimal(reader, colMap, "HORAS EXTRAS", "HORASEXTRAS", "HORAS_EXTRAS");
+
+                    // Fallback bidireccional entre Sueldo Base y Total Devengado
+                    if (sueldoBaseParsed <= 0 && totalDevengadoParsed > 0)
+                    {
+                        sueldoBaseParsed = Math.Max(0m, totalDevengadoParsed - (incentivo + reembolso + horasExtras));
+                    }
+                    else if (totalDevengadoParsed <= 0 && sueldoBaseParsed > 0)
+                    {
+                        totalDevengadoParsed = sueldoBaseParsed + incentivo + reembolso + horasExtras;
+                    }
+
                     var item = new NominaItemDto
                     {
                         CodigoEmpleado = codigo.Trim(),
-                        SueldoBase = ExcelHelper.ObtenerValorDecimal(reader, colMap, "PERIODO", "SUELDO", "SALARIO"),
+                        SueldoBase = sueldoBaseParsed,
+                        TotalDevengado = totalDevengadoParsed,
                         Quincena = ExcelHelper.ObtenerValorString(reader, colMap, "QUINCENA", "QUINCENA A") ?? "1Q",
 
                         // Devengados
-                        Incentivo = ExcelHelper.ObtenerValorDecimal(reader, colMap, "INCENTIVO"),
-                        Reembolso = ExcelHelper.ObtenerValorDecimal(reader, colMap, "REEMBOLSO"),
-                        HorasExtras = ExcelHelper.ObtenerValorDecimal(reader, colMap, "HORAS EXTRAS", "HORASEXTRAS", "HORAS_EXTRAS"),
+                        Incentivo = incentivo,
+                        Reembolso = reembolso,
+                        HorasExtras = horasExtras,
                         Prestamo = ExcelHelper.ObtenerValorDecimal(reader, colMap, "PRESTAMO", "ADELANTO"),
                         CuotaCumpleanos = ExcelHelper.ObtenerValorDecimal(reader, colMap, "CUOTA CUMPLEAÑOS", "CUOTA CUMPLEANOS", "CUMPLEAÑOS", "CUMPLEANOS"),
 

@@ -71,8 +71,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v0.1.3
-          name: Release v0.1.3 (Fix WebKitGTK Linux Re-Execution Env)
+          tag_name: v0.1.4
+          name: Release v0.1.4 (Fix Sueldo Base & Total Devengado Excel Parsing)
           draft: false
           prerelease: false
           files: |
@@ -134,8 +134,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v0.1.3
-          name: Release v0.1.3 (Fix WebKitGTK Linux Re-Execution Env)
+          tag_name: v0.1.4
+          name: Release v0.1.4 (Fix Sueldo Base & Total Devengado Excel Parsing)
           draft: false
           prerelease: false
           files: |

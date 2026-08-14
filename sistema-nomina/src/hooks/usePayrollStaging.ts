@@ -25,7 +25,20 @@ export const usePayrollStaging = (onSuccessCallback?: () => void) => {
     if (!previewNominaData) return;
 
     const updatedItems = [...previewNominaData.items];
-    updatedItems[index] = { ...updatedItems[index], [field]: value };
+    const curItem = { ...updatedItems[index], [field]: value };
+
+    // Sincronización automática bidireccional entre sueldoBase y totalDevengado
+    if (field === 'sueldoBase') {
+      const nuevoSueldo = typeof value === 'number' ? value : parseFloat(value) || 0;
+      const devengadoExtras = (curItem.incentivo || 0) + (curItem.reembolso || 0) + (curItem.horasExtras || 0);
+      curItem.totalDevengado = nuevoSueldo + devengadoExtras;
+    } else if (field === 'totalDevengado') {
+      const nuevoDevengado = typeof value === 'number' ? value : parseFloat(value) || 0;
+      const devengadoExtras = (curItem.incentivo || 0) + (curItem.reembolso || 0) + (curItem.horasExtras || 0);
+      curItem.sueldoBase = Math.max(0, nuevoDevengado - devengadoExtras);
+    }
+
+    updatedItems[index] = curItem;
 
     try {
       const recalculated = await payrollApi.recalcularNomina(updatedItems);

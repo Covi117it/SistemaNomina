@@ -93,6 +93,18 @@ namespace backend.Services.Pdf
         [Obsolete]
         private void ComposeTables(ColumnDescriptor col)
         {
+            decimal sueldoMostrar = _detalle.SueldoPeriodo;
+            decimal devengadoMostrar = _detalle.TotalDevengado;
+
+            if (sueldoMostrar <= 0 && devengadoMostrar > 0)
+            {
+                sueldoMostrar = Math.Max(0m, devengadoMostrar - (_detalle.HorasExtras + _detalle.Incentivo + _detalle.Reembolso));
+            }
+            else if (devengadoMostrar <= 0 && sueldoMostrar > 0)
+            {
+                devengadoMostrar = sueldoMostrar + _detalle.HorasExtras + _detalle.Incentivo + _detalle.Reembolso;
+            }
+
             col.Item().Grid(grid =>
             {
                 grid.Columns(12);
@@ -103,7 +115,7 @@ namespace backend.Services.Pdf
                     devCol.Item().Text("DEVENGADO POR :").Bold().Underline();
                     devCol.Item().PaddingTop(4);
 
-                    devCol.Item().Row(r => { r.RelativeItem().Text("SUELDO QUINCENAL"); r.ConstantItem(80).AlignRight().Text(PdfHelpers.FormatearMonto(_detalle.SueldoPeriodo)); });
+                    devCol.Item().Row(r => { r.RelativeItem().Text("SUELDO QUINCENAL"); r.ConstantItem(80).AlignRight().Text(PdfHelpers.FormatearMonto(sueldoMostrar)); });
                     devCol.Item().Row(r => { r.RelativeItem().Text("EXTRAS"); r.ConstantItem(80).AlignRight().Text(PdfHelpers.FormatearMonto(_detalle.HorasExtras)); });
                     devCol.Item().Row(r => { r.RelativeItem().Text("COMISIONES"); r.ConstantItem(80).AlignRight().Text(PdfHelpers.FormatearMonto(_detalle.Incentivo)); });
                     devCol.Item().Row(r => { r.RelativeItem().Text("OTROS"); r.ConstantItem(80).AlignRight().Text(PdfHelpers.FormatearMonto(_detalle.Reembolso)); });
@@ -117,7 +129,7 @@ namespace backend.Services.Pdf
                          .BorderColor(Colors.Black)
                          .PaddingHorizontal(4)
                          .AlignRight()
-                         .Text(PdfHelpers.FormatearMonto(_detalle.TotalDevengado))
+                         .Text(PdfHelpers.FormatearMonto(devengadoMostrar))
                          .Bold();
                     });
 

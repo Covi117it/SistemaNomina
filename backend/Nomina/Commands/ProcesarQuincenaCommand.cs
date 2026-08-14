@@ -90,6 +90,18 @@ namespace backend.Application.Features.Nomina.Commands
                 {
                     empMap.TryGetValue(item.CodigoEmpleado, out var empInfo);
 
+                    decimal sueldoFinal = item.SueldoBase;
+                    decimal devengadoFinal = item.TotalDevengado;
+
+                    if (sueldoFinal <= 0 && devengadoFinal > 0)
+                    {
+                        sueldoFinal = Math.Max(0m, devengadoFinal - (item.Incentivo + item.Reembolso + item.HorasExtras));
+                    }
+                    else if (devengadoFinal <= 0 && sueldoFinal > 0)
+                    {
+                        devengadoFinal = sueldoFinal + item.Incentivo + item.Reembolso + item.HorasExtras;
+                    }
+
                     var detalle = new NominaDetalle
                     {
                         NominaPeriodoId = nuevoPeriodo.Id,
@@ -97,13 +109,13 @@ namespace backend.Application.Features.Nomina.Commands
                         NombreEmpleadoSnapshot = item.NombreEmpleado ?? empInfo?.Nombres ?? "Empleado",
                         CedulaSnapshot = empInfo?.Cedula,
                         EmailDestinatario = item.EmailDestinatario ?? empInfo?.Email,
-                        SueldoPeriodo = item.SueldoBase,
+                        SueldoPeriodo = sueldoFinal,
                         Incentivo = item.Incentivo,
                         Reembolso = item.Reembolso,
                         HorasExtras = item.HorasExtras,
                         Prestamo = item.Prestamo,
                         CuotaCumpleanos = item.CuotaCumpleanos,
-                        TotalDevengado = item.TotalDevengado,
+                        TotalDevengado = devengadoFinal,
                         SeguroVehiculo = item.SeguroVehiculo,
                         SeguroMedico = item.SeguroMedico,
                         Sfs = item.Sfs,

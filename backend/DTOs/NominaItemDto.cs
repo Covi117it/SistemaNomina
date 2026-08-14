@@ -24,7 +24,13 @@ namespace backend.DTOs
         public decimal Isr { get; set; }
 
         // Totales Calculados
-       public decimal TotalDevengado => SueldoBase + Incentivo + Reembolso + HorasExtras;
+        private decimal? _totalDevengado;
+        public decimal TotalDevengado
+        {
+            get => _totalDevengado ?? (SueldoBase + Incentivo + Reembolso + HorasExtras);
+            set => _totalDevengado = value;
+        }
+
         public decimal TotalDeducciones => Prestamo + CuotaCumpleanos + SeguroVehiculo + SeguroMedico + Sfs + Afp + Isr;
         public decimal NetoAPagar { get; set; }
 

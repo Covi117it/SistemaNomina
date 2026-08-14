@@ -22,5 +22,7 @@ appsettings.Development.json
 .vscode/
 *.user
 *.suo
-# Credenciales sensibles
-backend/google-credentials.json
+# Archivos pesados y binarios compilados
+**/publish/
+**/src-tauri/resources/
+
