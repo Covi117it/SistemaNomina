@@ -13,9 +13,24 @@ export const usePayrollStaging = (onSuccessCallback?: () => void) => {
     setLoading(true);
     try {
       const data = await payrollApi.uploadPreview(file);
+      if (!data || !data.items || data.items.length === 0) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Sin datos reconocidos',
+          text: 'El archivo Excel no contiene filas de empleados válidas. Asegúrate de incluir la columna CÓDIGO EMPLEADO.',
+        });
+        return;
+      }
       setPreviewNominaData(data);
       setIsPayrollStagingMode(true);
     } catch (err: any) {
+      console.error('Error al subir Excel:', err);
+      const mensaje = err?.response?.data?.mensaje || err?.response?.data?.detail || err?.message || 'No se pudo conectar con el servidor backend.';
+      Swal.fire({
+        icon: 'error',
+        title: 'Error al leer el archivo Excel',
+        text: mensaje,
+      });
     } finally {
       setLoading(false);
     }

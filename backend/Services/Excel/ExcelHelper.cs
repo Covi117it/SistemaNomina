@@ -7,10 +7,20 @@ namespace backend.Services.Excel
 {
     public static class ExcelHelper
     {
-        // Normaliza nombres de columnas (quita guiones, espacios extra y convierte a mayúsculas)
+        // Normaliza nombres de columnas (quita tildes, guiones, espacios extra y convierte a mayúsculas)
         public static string NormalizarNombreColumna(string header)
         {
-            return header.Replace("_", " ").Replace("-", " ").Trim().ToUpperInvariant();
+            if (string.IsNullOrWhiteSpace(header)) return string.Empty;
+            string normalized = header.Normalize(System.Text.NormalizationForm.FormD);
+            var sb = new System.Text.StringBuilder();
+            foreach (char c in normalized)
+            {
+                if (CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark)
+                {
+                    sb.Append(c);
+                }
+            }
+            return sb.ToString().Replace("_", " ").Replace("-", " ").Trim().ToUpperInvariant();
         }
 
         // Obtiene un valor string seguro buscando por posibles nombres de columna
