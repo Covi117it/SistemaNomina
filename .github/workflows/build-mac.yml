@@ -71,8 +71,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v0.1.1
-          name: Release v0.1.1 (Actualización MariaDB 24/7 Nube Aiven)
+          tag_name: v0.1.2
+          name: Release v0.1.2 (Soporte Linux & Renderizado WebKitGTK)
           draft: false
           prerelease: false
           files: |
@@ -122,6 +122,8 @@ jobs:
           chmod +x ../sistema-nomina/src-tauri/resources/backend
 
       - name: Build Tauri Desktop App for Linux
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
         run: |
           cd sistema-nomina
           pnpm install
@@ -132,8 +134,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v0.1.1
-          name: Release v0.1.1 (Actualización MariaDB 24/7 Nube Aiven)
+          tag_name: v0.1.2
+          name: Release v0.1.2 (Soporte Linux & Renderizado WebKitGTK)
           draft: false
           prerelease: false
           files: |
