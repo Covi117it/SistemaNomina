@@ -40,93 +40,82 @@ namespace backend.Application.Features.Nomina.Queries
 
             var eventosList = new List<object>();
 
-            // EVALUACIÓN: Los eventos automáticos de nómina solo se generan para el mes y año actual en curso.
-            bool esMesActual = (targetAnio == hoy.Year && targetMes == hoy.Month);
-
-            if (esMesActual)
+            NominaPeriodo? periodoActual = null;
+            List<NominaPeriodo> periodosHistorial = new();
+            try
             {
-                NominaPeriodo? periodoActual = null;
-                try
+                // 1. Consultar históricos de nóminas procesadas en MariaDB para este año y mes
+                periodosHistorial = await _db.NominaPeriodos
+                    .Include(p => p.Detalles)
+                    .Where(p => p.FechaProcesado.Year == targetAnio && p.Mes == targetMes)
+                    .AsNoTracking()
+                    .ToListAsync();
+
+                periodoActual = periodosHistorial.FirstOrDefault(p => p.Quincena == currentQuincenaCode);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Warning] No se pudieron cargar los periodos de nómina: {ex.Message}");
+            }
+
+            // EVALUACIÓN DE REGLAS DE ELIMINACIÓN/COMPLETADO DE EVENTOS AUTOMÁTICOS:
+            bool nominaProcesadaEnDiaAsignado = periodoActual != null;
+            bool correosEnviadosEnDiaAsignado = periodoActual != null && periodoActual.FechaCorreosEnviados.HasValue;
+
+            int effectiveReminderDay = (hoy.Year == targetAnio && hoy.Month == targetMes && hoy.Day > assignedPayrollDay && !nominaProcesadaEnDiaAsignado) 
+                ? hoy.Day 
+                : assignedPayrollDay;
+            string effectiveDateStr = $"{targetAnio}-{targetMes:D2}-{effectiveReminderDay:D2}";
+
+            // 1. Evento Automático de Quincena "Supervisión / Procesar Nómina"
+            if (nominaProcesadaEnDiaAsignado)
+            {
+                eventosList.Add(new
                 {
-                    // 1. Consultar históricos de nóminas procesadas en MariaDB para este mes
-                    var periodosHistorial = await _db.NominaPeriodos
-                        .Include(p => p.Detalles)
-                        .Where(p => p.Mes == targetMes)
-                        .AsNoTracking()
-                        .ToListAsync();
-
-                    periodoActual = periodosHistorial.FirstOrDefault(p => p.Quincena == currentQuincenaCode);
-                }
-                catch (Exception ex)
+                    id = "auto-1",
+                    day = assignedPayrollDay,
+                    dateStr = $"{targetAnio}-{targetMes:D2}-{assignedPayrollDay:D2}",
+                    time = "Procesada",
+                    startTime = "07:00",
+                    title = $"Supervisión de Quincena ({quincenaLabel})",
+                    description = $"Quincena procesada exitosamente ({periodoActual?.Detalles?.Count ?? 0} empleados)",
+                    badge = "COMPLETADO",
+                    eventType = "payroll-completed"
+                });
+            }
+            else
+            {
+                eventosList.Add(new
                 {
-                    Console.WriteLine($"[Warning] No se pudieron cargar los periodos de nómina: {ex.Message}");
-                }
+                    id = "auto-1",
+                    day = effectiveReminderDay,
+                    dateStr = effectiveDateStr,
+                    time = "07:00 AM - Carga Límite",
+                    startTime = "07:00",
+                    title = $"Supervisión de Quincena ({quincenaLabel})",
+                    description = $"Fecha programada para cargar y procesar la {quincenaLabel} de {nombreMes}",
+                    badge = "QUINCENAL PENDIENTE",
+                    eventType = "payroll-pending",
+                    actionText = "Procesar"
+                });
+            }
 
-                // EVALUACIÓN DE REGLAS DE ELIMINACIÓN/COMPLETADO DE EVENTOS AUTOMÁTICOS:
-                // A) Evento "Subir / Procesar Nómina":
-                // Se considera completada la quincena SOLO SI fue procesada EXACTAMENTE EN SU DÍA ASIGNADO (assignedPayrollDay).
-                bool nominaProcesadaEnDiaAsignado = periodoActual != null && (periodoActual.FechaProcesado.Day == assignedPayrollDay);
-
-                // B) Evento "Enviar Volantes de Pago":
-                // Se considera completado el envío SOLO SI se enviaron los correos EXACTAMENTE EN SU DÍA ASIGNADO.
-                bool correosEnviadosEnDiaAsignado = periodoActual != null &&
-                                                    periodoActual.FechaCorreosEnviados.HasValue &&
-                                                    (periodoActual.FechaCorreosEnviados.Value.Day == assignedPayrollDay);
-
-                // Si no se procesó en su día asignado y ya pasó el día, se mueve dinámicamente a hoy para alertar al usuario
-                int effectiveReminderDay = (hoy.Day > assignedPayrollDay && !nominaProcesadaEnDiaAsignado) ? hoy.Day : assignedPayrollDay;
-                string effectiveDateStr = $"{targetAnio}-{targetMes:D2}-{effectiveReminderDay:D2}";
-
-                // 1. Evento Automático de Quincena "Supervisión / Procesar Nómina"
-                if (nominaProcesadaEnDiaAsignado)
+            // 2. Evento Automático de Quincena "Enviar Volantes de Pago"
+            if (!correosEnviadosEnDiaAsignado)
+            {
+                eventosList.Add(new
                 {
-                    eventosList.Add(new
-                    {
-                        id = "auto-1",
-                        day = assignedPayrollDay,
-                        dateStr = $"{targetAnio}-{targetMes:D2}-{assignedPayrollDay:D2}",
-                        time = "Procesada",
-                        startTime = "07:00",
-                        title = $"Supervisión de Quincena ({quincenaLabel})",
-                        description = $"Quincena procesada exitosamente en el día asignado ({periodoActual?.Detalles?.Count ?? 0} empleados)",
-                        badge = "COMPLETADO",
-                        eventType = "payroll-completed"
-                    });
-                }
-                else
-                {
-                    eventosList.Add(new
-                    {
-                        id = "auto-1",
-                        day = effectiveReminderDay,
-                        dateStr = effectiveDateStr,
-                        time = "07:00 AM - Carga Límite",
-                        startTime = "07:00",
-                        title = $"Supervisión de Quincena ({quincenaLabel})",
-                        description = $"Fecha programada para cargar y procesar la {quincenaLabel} de {nombreMes}",
-                        badge = "QUINCENAL PENDIENTE",
-                        eventType = "payroll-pending",
-                        actionText = "Procesar"
-                    });
-                }
-
-                // 2. Evento Automático de Quincena "Enviar Volantes de Pago"
-                if (!correosEnviadosEnDiaAsignado)
-                {
-                    eventosList.Add(new
-                    {
-                        id = "auto-2",
-                        day = effectiveReminderDay,
-                        dateStr = effectiveDateStr,
-                        time = "08:00 AM - Despacho",
-                        startTime = "08:00",
-                        title = "Enviar Volantes de Pago",
-                        description = "Generación y envío masivo de comprobantes PDF al correo de cada empleado",
-                        badge = "CORREOS PDF",
-                        eventType = "pdf-dispatch",
-                        actionText = "Despachar"
-                    });
-                }
+                    id = "auto-2",
+                    day = effectiveReminderDay,
+                    dateStr = effectiveDateStr,
+                    time = "08:00 AM - Despacho",
+                    startTime = "08:00",
+                    title = "Enviar Volantes de Pago",
+                    description = "Generación y envío masivo de comprobantes PDF al correo de cada empleado",
+                    badge = "CORREOS PDF",
+                    eventType = "pdf-dispatch",
+                    actionText = "Despachar"
+                });
             }
 
             // 3. Consultar eventos personalizados creados por usuarios en MariaDB para el año y mes solicitados
