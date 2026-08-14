@@ -14,10 +14,22 @@ pub fn run() {
             #[cfg(not(debug_assertions))]
             {
                 if let Ok(resource_dir) = app.path().resource_dir() {
-                    let backend_exe = resource_dir.join("backend");
+                    let mut backend_exe = resource_dir.join("backend");
+                    if !backend_exe.exists() {
+                        if let Ok(exe_path) = std::env::current_exe() {
+                            if let Some(exe_dir) = exe_path.parent() {
+                                let local_backend = exe_dir.join("resources").join("backend");
+                                if local_backend.exists() {
+                                    backend_exe = local_backend;
+                                }
+                            }
+                        }
+                    }
+
                     if backend_exe.exists() {
+                        let working_dir = backend_exe.parent().unwrap_or(&resource_dir);
                         let _ = Command::new(&backend_exe)
-                            .current_dir(&resource_dir)
+                            .current_dir(working_dir)
                             .spawn();
                     }
                 }
