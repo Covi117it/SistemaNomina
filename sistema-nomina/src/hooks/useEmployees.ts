@@ -27,7 +27,7 @@ export const useEmployees = () => {
   const [totalInactivos, setTotalInactivos] = useState<number>(0);
   const [totalFiltrados, setTotalFiltrados] = useState<number>(0);
 
-  const fetchDbEmployees = async () => {
+  const fetchDbEmployees = async (retries = 3) => {
     setLoading(true);
     try {
       const data = await employeeApi.fetchEmployees(searchTerm, statusFilter, currentPage, pageSize);
@@ -62,6 +62,9 @@ export const useEmployees = () => {
       setTotalPages(pages);
     } catch (err) {
       console.error('Error cargando empleados:', err);
+      if (retries > 0) {
+        setTimeout(() => fetchDbEmployees(retries - 1), 1500);
+      }
     } finally {
       setLoading(false);
     }
