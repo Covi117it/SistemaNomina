@@ -13,25 +13,47 @@ pub fn run() {
         .setup(|app| {
             #[cfg(not(debug_assertions))]
             {
-                if let Ok(resource_dir) = app.path().resource_dir() {
-                    let mut backend_exe = resource_dir.join("backend");
-                    if !backend_exe.exists() {
-                        if let Ok(exe_path) = std::env::current_exe() {
-                            if let Some(exe_dir) = exe_path.parent() {
-                                let local_backend = exe_dir.join("resources").join("backend");
-                                if local_backend.exists() {
-                                    backend_exe = local_backend;
-                                }
+                let mut candidate_paths = Vec::new();
+                if let Ok(res_dir) = app.path().resource_dir() {
+                    candidate_paths.push(res_dir.join("backend"));
+                    candidate_paths.push(res_dir.join("resources").join("backend"));
+                }
+                if let Ok(exe_path) = std::env::current_exe() {
+                    if let Some(exe_dir) = exe_path.parent() {
+                        candidate_paths.push(exe_dir.join("resources").join("backend"));
+                        candidate_paths.push(exe_dir.join("backend"));
+                        if let Some(parent_dir) = exe_dir.parent() {
+                            candidate_paths.push(parent_dir.join("lib").join("sistema-nomina").join("resources").join("backend"));
+                            candidate_paths.push(parent_dir.join("resources").join("backend"));
+                        }
+                    }
+                }
+
+                let mut found_backend: Option<std::path::PathBuf> = None;
+                for path in candidate_paths {
+                    if path.exists() {
+                        found_backend = Some(path);
+                        break;
+                    }
+                }
+
+                if let Some(backend_exe) = found_backend {
+                    #[cfg(unix)]
+                    {
+                        use std::os::unix::fs::PermissionsExt;
+                        if let Ok(metadata) = std::fs::metadata(&backend_exe) {
+                            let mut perms = metadata.permissions();
+                            if perms.mode() & 0o111 == 0 {
+                                perms.set_mode(0o755);
+                                let _ = std::fs::set_permissions(&backend_exe, perms);
                             }
                         }
                     }
 
-                    if backend_exe.exists() {
-                        let working_dir = backend_exe.parent().unwrap_or(&resource_dir);
-                        let _ = Command::new(&backend_exe)
-                            .current_dir(working_dir)
-                            .spawn();
-                    }
+                    let working_dir = backend_exe.parent().unwrap_or(&std::path::PathBuf::from("."));
+                    let _ = Command::new(&backend_exe)
+                        .current_dir(working_dir)
+                        .spawn();
                 }
             }
             Ok(())

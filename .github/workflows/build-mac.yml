@@ -117,7 +117,9 @@ jobs:
       - name: Build .NET Backend for Linux (x64)
         run: |
           cd backend
+          mkdir -p ../sistema-nomina/src-tauri/resources
           $HOME/.dotnet/dotnet publish -c Release -r linux-x64 --self-contained true -p:PublishSingleFile=true -o ../sistema-nomina/src-tauri/resources/
+          chmod +x ../sistema-nomina/src-tauri/resources/backend
 
       - name: Build Tauri Desktop App for Linux
         run: |
