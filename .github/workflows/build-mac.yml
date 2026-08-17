@@ -73,10 +73,14 @@ jobs:
             --title "Release v0.1.6 (Columnas Financieras y Vista Previa PDF en Distribución)" \
             --notes "Actualización con vista previa PDF directa y columnas de Sueldo Base, Total Devengado, Total Deducciones y Neto a Pagar en Distribución." \
             sistema-nomina/src-tauri/target/x86_64-apple-darwin/release/bundle/dmg/*.dmg \
-            sistema-nomina/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg || \
+            sistema-nomina/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg \
+            sistema-nomina/src-tauri/target/x86_64-apple-darwin/release/bundle/macos/*.tar.gz* \
+            sistema-nomina/src-tauri/target/aarch64-apple-darwin/release/bundle/macos/*.tar.gz* || \
           gh release upload v0.1.6 \
             sistema-nomina/src-tauri/target/x86_64-apple-darwin/release/bundle/dmg/*.dmg \
-            sistema-nomina/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg --clobber
+            sistema-nomina/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg \
+            sistema-nomina/src-tauri/target/x86_64-apple-darwin/release/bundle/macos/*.tar.gz* \
+            sistema-nomina/src-tauri/target/aarch64-apple-darwin/release/bundle/macos/*.tar.gz* --clobber
 
   build-linux:
     runs-on: ubuntu-latest
@@ -123,15 +127,21 @@ jobs:
           pnpm install
           pnpm tauri build
 
-      - name: Update GitHub Release with Linux Executables
+      - name: Update GitHub Release with Linux Executables & Auto-Update Manifest
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release upload v0.1.6 \
             sistema-nomina/src-tauri/target/release/bundle/deb/*.deb \
-            sistema-nomina/src-tauri/target/release/bundle/appimage/*.AppImage --clobber || \
+            sistema-nomina/src-tauri/target/release/bundle/appimage/*.AppImage* \
+            sistema-nomina/src-tauri/target/release/bundle/appimage/*.tar.gz* \
+            sistema-nomina/src-tauri/target/release/bundle/appimage/latest.json* \
+            sistema-nomina/src-tauri/target/release/latest.json* --clobber || \
           gh release create v0.1.6 \
             --title "Release v0.1.6 (Columnas Financieras y Vista Previa PDF en Distribución)" \
             --notes "Actualización con vista previa PDF directa y columnas de Sueldo Base, Total Devengado, Total Deducciones y Neto a Pagar en Distribución." \
             sistema-nomina/src-tauri/target/release/bundle/deb/*.deb \
-            sistema-nomina/src-tauri/target/release/bundle/appimage/*.AppImage
+            sistema-nomina/src-tauri/target/release/bundle/appimage/*.AppImage* \
+            sistema-nomina/src-tauri/target/release/bundle/appimage/*.tar.gz* \
+            sistema-nomina/src-tauri/target/release/bundle/appimage/latest.json* \
+            sistema-nomina/src-tauri/target/release/latest.json*
