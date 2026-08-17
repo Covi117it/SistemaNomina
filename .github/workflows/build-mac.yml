@@ -32,9 +32,9 @@ jobs:
           node-version: 22
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: 9
+        run: |
+          corepack enable
+          corepack prepare pnpm@latest --activate
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
@@ -71,8 +71,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v0.1.4
-          name: Release v0.1.4 (Fix Sueldo Base & Total Devengado Excel Parsing)
+          tag_name: v0.1.5
+          name: Release v0.1.5 (Soporte Gmail Multi-Equipo, Orden Ascendente y Limpieza)
           draft: false
           prerelease: false
           files: |
@@ -107,9 +107,9 @@ jobs:
           node-version: 22
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: 9
+        run: |
+          corepack enable
+          corepack prepare pnpm@latest --activate
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
@@ -134,8 +134,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v0.1.4
-          name: Release v0.1.4 (Fix Sueldo Base & Total Devengado Excel Parsing)
+          tag_name: v0.1.5
+          name: Release v0.1.5 (Soporte Gmail Multi-Equipo, Orden Ascendente y Limpieza)
           draft: false
           prerelease: false
           files: |
