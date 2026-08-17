@@ -67,19 +67,21 @@ jobs:
           pnpm tauri build --target aarch64-apple-darwin
 
       - name: Create or Update GitHub Release for macOS
-        uses: softprops/action-gh-release@v2
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: v0.1.5
-          name: Release v0.1.5 (Soporte Gmail Multi-Equipo, Orden Ascendente y Limpieza)
-          draft: false
-          prerelease: false
-          files: |
-            sistema-nomina/src-tauri/target/x86_64-apple-darwin/release/bundle/dmg/*.dmg
-            sistema-nomina/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg
-            sistema-nomina/src-tauri/target/x86_64-apple-darwin/release/bundle/macos/*.app.tar.gz*
-            sistema-nomina/src-tauri/target/aarch64-apple-darwin/release/bundle/macos/*.app.tar.gz*
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create v0.1.5 \
+            --title "Release v0.1.5 (Soporte Gmail Multi-Equipo, Orden Ascendente y Limpieza)" \
+            --notes "Actualización oficial con cifrado AES-256 portátil para SMTP, ordenamiento numérico de empleados y calendario limpio." \
+            sistema-nomina/src-tauri/target/x86_64-apple-darwin/release/bundle/dmg/*.dmg \
+            sistema-nomina/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg \
+            sistema-nomina/src-tauri/target/x86_64-apple-darwin/release/bundle/macos/*.app.tar.gz* \
+            sistema-nomina/src-tauri/target/aarch64-apple-darwin/release/bundle/macos/*.app.tar.gz* || \
+          gh release upload v0.1.5 \
+            sistema-nomina/src-tauri/target/x86_64-apple-darwin/release/bundle/dmg/*.dmg \
+            sistema-nomina/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg \
+            sistema-nomina/src-tauri/target/x86_64-apple-darwin/release/bundle/macos/*.app.tar.gz* \
+            sistema-nomina/src-tauri/target/aarch64-apple-darwin/release/bundle/macos/*.app.tar.gz* --clobber
 
   build-linux:
     runs-on: ubuntu-latest
@@ -130,14 +132,14 @@ jobs:
           pnpm tauri build
 
       - name: Update GitHub Release with Linux Executables
-        uses: softprops/action-gh-release@v2
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: v0.1.5
-          name: Release v0.1.5 (Soporte Gmail Multi-Equipo, Orden Ascendente y Limpieza)
-          draft: false
-          prerelease: false
-          files: |
-            sistema-nomina/src-tauri/target/release/bundle/deb/*.deb
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload v0.1.5 \
+            sistema-nomina/src-tauri/target/release/bundle/deb/*.deb \
+            sistema-nomina/src-tauri/target/release/bundle/appimage/*.AppImage --clobber || \
+          gh release create v0.1.5 \
+            --title "Release v0.1.5 (Soporte Gmail Multi-Equipo, Orden Ascendente y Limpieza)" \
+            --notes "Actualización oficial con cifrado AES-256 portátil para SMTP, ordenamiento numérico de empleados y calendario limpio." \
+            sistema-nomina/src-tauri/target/release/bundle/deb/*.deb \
             sistema-nomina/src-tauri/target/release/bundle/appimage/*.AppImage
