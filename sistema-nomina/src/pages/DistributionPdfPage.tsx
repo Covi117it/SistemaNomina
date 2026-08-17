@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { NominaItem } from '../types/nomina';
 import { PageHeader } from '../components/common/PageHeader';
 import { StatCard } from '../components/common/StatCard';
 import { DistributionTable } from '../components/payroll/DistributionTable';
 import { SmtpConfigModal } from '../components/payroll/SmtpConfigModal';
+import { PDFPaystubModal } from '../components/payroll/PDFPaystubModal';
 import { SearchInput } from '../components/common/SearchInput';
 import { FormSelect } from '../components/common/FormSelect';
 import { PillFilterGroup } from '../components/common/PillFilterGroup';
@@ -36,6 +37,8 @@ export const DistributionPdfPage: React.FC<DistributionPdfPageProps> = ({
   onNavigateToHistory,
   onNavigateToDistribution,
 }) => {
+  const [selectedPdfItem, setSelectedPdfItem] = useState<NominaItem | null>(null);
+
   const {
     sending,
     loadingHistoric,
@@ -202,9 +205,17 @@ export const DistributionPdfPage: React.FC<DistributionPdfPageProps> = ({
             items={filteredItems}
             onUpdateEmail={handleUpdateEmail}
             onToggleExclude={handleToggleExclude}
+            onSelectPdfItem={(item) => setSelectedPdfItem(item)}
           />
         </>
       )}
+
+      <PDFPaystubModal
+        isOpen={!!selectedPdfItem}
+        onClose={() => setSelectedPdfItem(null)}
+        item={selectedPdfItem}
+        conceptoPeriodo={conceptoPeriodo}
+      />
 
       <SmtpConfigModal
         isOpen={showSmtpModal}

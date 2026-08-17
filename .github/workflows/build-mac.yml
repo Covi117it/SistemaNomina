@@ -69,12 +69,12 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create v0.1.5 \
-            --title "Release v0.1.5 (Soporte Gmail Multi-Equipo, Orden Ascendente y Limpieza)" \
-            --notes "Actualización oficial con cifrado AES-256 portátil para SMTP, ordenamiento numérico de empleados y calendario limpio." \
+          gh release create v0.1.6 \
+            --title "Release v0.1.6 (Columnas Financieras y Vista Previa PDF en Distribución)" \
+            --notes "Actualización con vista previa PDF directa y columnas de Sueldo Base, Total Devengado, Total Deducciones y Neto a Pagar en Distribución." \
             sistema-nomina/src-tauri/target/x86_64-apple-darwin/release/bundle/dmg/*.dmg \
             sistema-nomina/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg || \
-          gh release upload v0.1.5 \
+          gh release upload v0.1.6 \
             sistema-nomina/src-tauri/target/x86_64-apple-darwin/release/bundle/dmg/*.dmg \
             sistema-nomina/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg --clobber
 
@@ -127,11 +127,11 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload v0.1.5 \
+          gh release upload v0.1.6 \
             sistema-nomina/src-tauri/target/release/bundle/deb/*.deb \
             sistema-nomina/src-tauri/target/release/bundle/appimage/*.AppImage --clobber || \
-          gh release create v0.1.5 \
-            --title "Release v0.1.5 (Soporte Gmail Multi-Equipo, Orden Ascendente y Limpieza)" \
-            --notes "Actualización oficial con cifrado AES-256 portátil para SMTP, ordenamiento numérico de empleados y calendario limpio." \
+          gh release create v0.1.6 \
+            --title "Release v0.1.6 (Columnas Financieras y Vista Previa PDF en Distribución)" \
+            --notes "Actualización con vista previa PDF directa y columnas de Sueldo Base, Total Devengado, Total Deducciones y Neto a Pagar en Distribución." \
             sistema-nomina/src-tauri/target/release/bundle/deb/*.deb \
             sistema-nomina/src-tauri/target/release/bundle/appimage/*.AppImage
