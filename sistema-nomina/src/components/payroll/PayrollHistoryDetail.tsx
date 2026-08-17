@@ -69,15 +69,19 @@ export const PayrollHistoryDetail: React.FC<PayrollHistoryDetailProps> = ({
     await sendSingleEmail(det.id, itemToDispatch, period.concepto);
   };
 
-  const filteredDetalles = period.detalles?.filter((det: any) => {
-    if (!detailSearchTerm) return true;
-    const term = detailSearchTerm.toLowerCase();
-    return (
-      det.codigoEmpleado?.toLowerCase().includes(term) ||
-      det.nombreEmpleadoSnapshot?.toLowerCase().includes(term) ||
-      det.emailDestinatario?.toLowerCase().includes(term)
+  const filteredDetalles = (period.detalles || [])
+    .filter((det: any) => {
+      if (!detailSearchTerm) return true;
+      const term = detailSearchTerm.toLowerCase();
+      return (
+        det.codigoEmpleado?.toLowerCase().includes(term) ||
+        det.nombreEmpleadoSnapshot?.toLowerCase().includes(term) ||
+        det.emailDestinatario?.toLowerCase().includes(term)
+      );
+    })
+    .sort((a: any, b: any) =>
+      (a.codigoEmpleado || '').localeCompare(b.codigoEmpleado || '', undefined, { numeric: true, sensitivity: 'base' })
     );
-  });
 
   const totalItems = filteredDetalles?.length || 0;
   const totalPages = Math.ceil(totalItems / pageSize) || 1;

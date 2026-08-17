@@ -68,54 +68,56 @@ namespace backend.Application.Features.Nomina.Queries
             string effectiveDateStr = $"{targetAnio}-{targetMes:D2}-{effectiveReminderDay:D2}";
 
             // 1. Evento Automático de Quincena "Supervisión / Procesar Nómina"
-            if (nominaProcesadaEnDiaAsignado)
+            if (targetAnio == hoy.Year && targetMes == hoy.Month)
             {
-                eventosList.Add(new
+                if (nominaProcesadaEnDiaAsignado)
                 {
-                    id = "auto-1",
-                    day = assignedPayrollDay,
-                    dateStr = $"{targetAnio}-{targetMes:D2}-{assignedPayrollDay:D2}",
-                    time = "Procesada",
-                    startTime = "07:00",
-                    title = $"Supervisión de Quincena ({quincenaLabel})",
-                    description = $"Quincena procesada exitosamente ({periodoActual?.Detalles?.Count ?? 0} empleados)",
-                    badge = "COMPLETADO",
-                    eventType = "payroll-completed"
-                });
-            }
-            else
-            {
-                eventosList.Add(new
+                    eventosList.Add(new
+                    {
+                        id = "auto-1",
+                        day = assignedPayrollDay,
+                        dateStr = $"{targetAnio}-{targetMes:D2}-{assignedPayrollDay:D2}",
+                        time = "Procesada",
+                        startTime = "07:00",
+                        title = $"Supervisión de Quincena ({quincenaLabel})",
+                        description = $"Quincena procesada exitosamente ({periodoActual?.Detalles?.Count ?? 0} empleados)",
+                        badge = "COMPLETADO",
+                        eventType = "payroll-completed"
+                    });
+                }
+                else
                 {
-                    id = "auto-1",
-                    day = effectiveReminderDay,
-                    dateStr = effectiveDateStr,
-                    time = "07:00 AM - Carga Límite",
-                    startTime = "07:00",
-                    title = $"Supervisión de Quincena ({quincenaLabel})",
-                    description = $"Fecha programada para cargar y procesar la {quincenaLabel} de {nombreMes}",
-                    badge = "QUINCENAL PENDIENTE",
-                    eventType = "payroll-pending",
-                    actionText = "Procesar"
-                });
-            }
-
-            // 2. Evento Automático de Quincena "Enviar Volantes de Pago"
-            if (!correosEnviadosEnDiaAsignado)
-            {
-                eventosList.Add(new
+                    eventosList.Add(new
+                    {
+                        id = "auto-1",
+                        day = effectiveReminderDay,
+                        dateStr = effectiveDateStr,
+                        time = "07:00 AM - Carga Límite",
+                        startTime = "07:00",
+                        title = $"Supervisión de Quincena ({quincenaLabel})",
+                        description = $"Fecha programada para cargar y procesar la {quincenaLabel} de {nombreMes}",
+                        badge = "QUINCENAL PENDIENTE",
+                        eventType = "payroll-pending",
+                        actionText = "Procesar"
+                    });
+                }
+                // 2. Evento Automático de Quincena "Enviar Volantes de Pago"
+                if (!correosEnviadosEnDiaAsignado)
                 {
-                    id = "auto-2",
-                    day = effectiveReminderDay,
-                    dateStr = effectiveDateStr,
-                    time = "08:00 AM - Despacho",
-                    startTime = "08:00",
-                    title = "Enviar Volantes de Pago",
-                    description = "Generación y envío masivo de comprobantes PDF al correo de cada empleado",
-                    badge = "CORREOS PDF",
-                    eventType = "pdf-dispatch",
-                    actionText = "Despachar"
-                });
+                    eventosList.Add(new
+                    {
+                        id = "auto-2",
+                        day = effectiveReminderDay,
+                        dateStr = effectiveDateStr,
+                        time = "08:00 AM - Despacho",
+                        startTime = "08:00",
+                        title = "Enviar Volantes de Pago",
+                        description = "Generación y envío masivo de comprobantes PDF al correo de cada empleado",
+                        badge = "CORREOS PDF",
+                        eventType = "pdf-dispatch",
+                        actionText = "Despachar"
+                    });
+                }
             }
 
             // 3. Consultar eventos personalizados creados por usuarios en MariaDB para el año y mes solicitados

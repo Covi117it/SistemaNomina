@@ -29,18 +29,22 @@ export const useDistributionPdf = (items: NominaItem[] = [], conceptoPeriodo: st
   const cargarDetallesPeriodo = (periodo: any) => {
     setPeriodoNombre(periodo.concepto || conceptoPeriodo);
     if (periodo.detalles) {
-      const mappedItems = periodo.detalles.map((det: any) => ({
-        codigoEmpleado: det.codigoEmpleado,
-        nombreEmpleado: det.nombreEmpleadoSnapshot,
-        sueldoBase: det.sueldoPeriodo,
-        quincena: periodo.quincena,
-        totalDevengado: det.totalDevengado,
-        totalDeducciones: det.totalDeducciones,
-        netoAPagar: det.netoPagado,
-        emailDestinatario: det.emailDestinatario,
-        empleadoExiste: true,
-        excluido: false,
-      }));
+      const mappedItems = periodo.detalles
+        .map((det: any) => ({
+          codigoEmpleado: det.codigoEmpleado,
+          nombreEmpleado: det.nombreEmpleadoSnapshot,
+          sueldoBase: det.sueldoPeriodo,
+          quincena: periodo.quincena,
+          totalDevengado: det.totalDevengado,
+          totalDeducciones: det.totalDeducciones,
+          netoAPagar: det.netoPagado,
+          emailDestinatario: det.emailDestinatario,
+          empleadoExiste: true,
+          excluido: false,
+        }))
+        .sort((a: any, b: any) =>
+          (a.codigoEmpleado || '').localeCompare(b.codigoEmpleado || '', undefined, { numeric: true, sensitivity: 'base' })
+        );
       setLocalItems(mappedItems);
     }
   };

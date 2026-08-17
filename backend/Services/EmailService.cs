@@ -58,10 +58,15 @@ namespace backend.Services
 
                 message.Body = bodyBuilder.ToMessageBody();
 
-                using var client = new MailKitSmtpClient();
+                               using var client = new MailKitSmtpClient();
 
-                await client.ConnectAsync(settings.Server, settings.Port, settings.EnableSsl ? SecureSocketOptions.StartTls : SecureSocketOptions.None);
+                var socketOptions = settings.Port == 465 
+                    ? SecureSocketOptions.SslOnConnect 
+                    : (settings.EnableSsl ? SecureSocketOptions.StartTls : SecureSocketOptions.None);
 
+                await client.ConnectAsync(settings.Server, settings.Port, socketOptions);
+
+                
                 if (!string.IsNullOrWhiteSpace(settings.Username) &&
                 !string.IsNullOrWhiteSpace(settings.Password))
                 {

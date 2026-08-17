@@ -67,7 +67,8 @@ export const PayrollStagingTable: React.FC<PayrollStagingTableProps> = ({
     return list.sort((a, b) => {
       const aUnreg = isUnregistered(a) ? 0 : 1;
       const bUnreg = isUnregistered(b) ? 0 : 1;
-      return aUnreg - bUnreg;
+      if (aUnreg !== bUnreg) return aUnreg - bUnreg;
+      return (a.codigoEmpleado || '').localeCompare(b.codigoEmpleado || '', undefined, { numeric: true, sensitivity: 'base' });
     });
   }, [previewData?.items]);
 
