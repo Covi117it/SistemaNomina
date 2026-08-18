@@ -23,18 +23,19 @@ pub fn run() {
         .setup(|_app| {
             #[cfg(not(debug_assertions))]
             {
+                let binary_name = if cfg!(windows) { "backend.exe" } else { "backend" };
                 let mut candidate_paths = Vec::new();
                 if let Ok(res_dir) = _app.path().resource_dir() {
-                    candidate_paths.push(res_dir.join("backend"));
-                    candidate_paths.push(res_dir.join("resources").join("backend"));
+                    candidate_paths.push(res_dir.join(binary_name));
+                    candidate_paths.push(res_dir.join("resources").join(binary_name));
                 }
                 if let Ok(exe_path) = std::env::current_exe() {
                     if let Some(exe_dir) = exe_path.parent() {
-                        candidate_paths.push(exe_dir.join("resources").join("backend"));
-                        candidate_paths.push(exe_dir.join("backend"));
+                        candidate_paths.push(exe_dir.join("resources").join(binary_name));
+                        candidate_paths.push(exe_dir.join(binary_name));
                         if let Some(parent_dir) = exe_dir.parent() {
-                            candidate_paths.push(parent_dir.join("lib").join("sistema-nomina").join("resources").join("backend"));
-                            candidate_paths.push(parent_dir.join("resources").join("backend"));
+                            candidate_paths.push(parent_dir.join("lib").join("sistema-nomina").join("resources").join(binary_name));
+                            candidate_paths.push(parent_dir.join("resources").join(binary_name));
                         }
                     }
                 }
