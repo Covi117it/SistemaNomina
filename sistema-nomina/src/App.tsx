@@ -43,9 +43,9 @@ export function App() {
           Authorization: `Bearer ${githubToken}`,
         } : {};
 
-        const update = await check(Object.keys(headers).length > 0 ? { headers } : undefined);
-        if (update?.available) {
-          console.log(`Nueva versión disponible: ${update.version}`);
+      const update = await check(Object.keys(headers).length > 0 ? { headers } : undefined);
+        if (update) {
+          console.log(`Nueva versión disponible: ${update.version} (actual: ${update.currentVersion})`);
           await update.downloadAndInstall(undefined, Object.keys(headers).length > 0 ? { headers } : undefined);
           await relaunch();
         }

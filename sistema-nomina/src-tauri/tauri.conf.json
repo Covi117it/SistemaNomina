@@ -37,7 +37,7 @@
   },
   "plugins": {
     "updater": {
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDZFNDBBQzhFNEVEQkRCQjEKUldTeDI5dE9qcXhBYnBVSXBqSUFTZmw2RGV6cjYzMDlvQWI5c0xRVTRWV2ZueDI5VmtxYjZqcEgK",
+      "pubkey":"dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDlBNTcyOTQ2RTBEMDBERjgKUldUNERkRGdSaWxYbWlXSHJlT09tdmZGU2lNR2pVdm1IbUtlZ0JHQzlsOE9pR1lkckRjZzgvTk8K",
       "endpoints": [
         "https://github.com/Covi117it/SistemaNomina/releases/latest/download/latest.json"
       ]

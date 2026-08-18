@@ -65,22 +65,56 @@ jobs:
           cd sistema-nomina
           pnpm tauri build --target aarch64-apple-darwin
 
-      - name: Create or Update GitHub Release for macOS
+      - name: Generate latest.json & Create/Update GitHub Release for macOS
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           shopt -s nullglob
+          VERSION=$(node -p "require('./sistema-nomina/src-tauri/tauri.conf.json').version")
+          RELEASE_TAG="${GITHUB_REF_NAME:-v$VERSION}"
+          if [[ ! "$RELEASE_TAG" =~ ^v ]]; then RELEASE_TAG="v$RELEASE_TAG"; fi
+          export RELEASE_TAG
+
+          node -e '
+          const fs = require("fs");
+          const path = require("path");
+          const { execSync } = require("child_process");
+          const tag = process.env.RELEASE_TAG;
+          const repo = "Covi117it/SistemaNomina";
+
+          let latest = { version: tag, notes: "Actualización de SistemaNomina " + tag, pub_date: new Date().toISOString(), platforms: {} };
+          try {
+            execSync(`gh release download ${tag} -p latest.json -D . --clobber`, { stdio: "ignore" });
+            if (fs.existsSync("latest.json")) latest = JSON.parse(fs.readFileSync("latest.json", "utf8"));
+          } catch(e) {}
+
+          function addPlatform(targetDir, platformKey, ext) {
+            if (!fs.existsSync(targetDir)) return;
+            const files = fs.readdirSync(targetDir);
+            const archive = files.find(f => f.endsWith(ext) && !f.endsWith(".sig"));
+            const sigFile = files.find(f => f.endsWith(ext + ".sig"));
+            if (archive && sigFile) {
+              latest.platforms[platformKey] = {
+                signature: fs.readFileSync(path.join(targetDir, sigFile), "utf8").trim(),
+                url: `https://github.com/${repo}/releases/download/${tag}/${archive}`
+              };
+            }
+          }
+          addPlatform("sistema-nomina/src-tauri/target/x86_64-apple-darwin/release/bundle/macos", "darwin-x86_64", ".app.tar.gz");
+          addPlatform("sistema-nomina/src-tauri/target/aarch64-apple-darwin/release/bundle/macos", "darwin-aarch64", ".app.tar.gz");
+          fs.writeFileSync("latest.json", JSON.stringify(latest, null, 2));
+          '
+
           mac_files=(
             sistema-nomina/src-tauri/target/x86_64-apple-darwin/release/bundle/dmg/*.dmg
             sistema-nomina/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg
+            sistema-nomina/src-tauri/target/x86_64-apple-darwin/release/bundle/macos/*.app.tar.gz*
+            sistema-nomina/src-tauri/target/aarch64-apple-darwin/release/bundle/macos/*.app.tar.gz*
+            latest.json
           )
-          if [ ${#mac_files[@]} -gt 0 ]; then
-            gh release create v0.1.6 \
-              --title "Release v0.1.6 (Columnas Financieras y Vista Previa PDF en Distribución)" \
-              --notes "Actualización con vista previa PDF directa y columnas de Sueldo Base, Total Devengado, Total Deducciones y Neto a Pagar en Distribución." \
-              "${mac_files[@]}" || \
-            gh release upload v0.1.6 "${mac_files[@]}" --clobber
-          fi
+
+          gh release create "$RELEASE_TAG" --title "Release $RELEASE_TAG" --notes "Actualización automática de SistemaNomina." "${mac_files[@]}" || \
+          gh release upload "$RELEASE_TAG" "${mac_files[@]}" --clobber
 
   build-linux:
     runs-on: ubuntu-latest
@@ -127,19 +161,51 @@ jobs:
           pnpm install
           pnpm tauri build
 
-      - name: Update GitHub Release with Linux Executables
+      - name: Generate latest.json & Update GitHub Release with Linux
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           shopt -s nullglob
+          VERSION=$(node -p "require('./sistema-nomina/src-tauri/tauri.conf.json').version")
+          RELEASE_TAG="${GITHUB_REF_NAME:-v$VERSION}"
+          if [[ ! "$RELEASE_TAG" =~ ^v ]]; then RELEASE_TAG="v$RELEASE_TAG"; fi
+          export RELEASE_TAG
+
+          node -e '
+          const fs = require("fs");
+          const path = require("path");
+          const { execSync } = require("child_process");
+          const tag = process.env.RELEASE_TAG;
+          const repo = "Covi117it/SistemaNomina";
+
+          let latest = { version: tag, notes: "Actualización de SistemaNomina " + tag, pub_date: new Date().toISOString(), platforms: {} };
+          try {
+            execSync(`gh release download ${tag} -p latest.json -D . --clobber`, { stdio: "ignore" });
+            if (fs.existsSync("latest.json")) latest = JSON.parse(fs.readFileSync("latest.json", "utf8"));
+          } catch(e) {}
+
+          function addPlatform(targetDir, platformKey, ext) {
+            if (!fs.existsSync(targetDir)) return;
+            const files = fs.readdirSync(targetDir);
+            const archive = files.find(f => f.endsWith(ext) && !f.endsWith(".sig"));
+            const sigFile = files.find(f => f.endsWith(ext + ".sig"));
+            if (archive && sigFile) {
+              latest.platforms[platformKey] = {
+                signature: fs.readFileSync(path.join(targetDir, sigFile), "utf8").trim(),
+                url: `https://github.com/${repo}/releases/download/${tag}/${archive}`
+              };
+            }
+          }
+          addPlatform("sistema-nomina/src-tauri/target/release/bundle/appimage", "linux-x86_64", ".AppImage.tar.gz");
+          fs.writeFileSync("latest.json", JSON.stringify(latest, null, 2));
+          '
+
           linux_files=(
             sistema-nomina/src-tauri/target/release/bundle/deb/*.deb
             sistema-nomina/src-tauri/target/release/bundle/appimage/*.AppImage
+            sistema-nomina/src-tauri/target/release/bundle/appimage/*.AppImage.tar.gz*
+            latest.json
           )
-          if [ ${#linux_files[@]} -gt 0 ]; then
-            gh release upload v0.1.6 "${linux_files[@]}" --clobber || \
-            gh release create v0.1.6 \
-              --title "Release v0.1.6 (Columnas Financieras y Vista Previa PDF en Distribución)" \
-              --notes "Actualización con vista previa PDF directa y columnas de Sueldo Base, Total Devengado, Total Deducciones y Neto a Pagar en Distribución." \
-              "${linux_files[@]}"
-          fi
+
+          gh release upload "$RELEASE_TAG" "${linux_files[@]}" --clobber || \
+          gh release create "$RELEASE_TAG" --title "Release $RELEASE_TAG" --notes "Actualización automática de SistemaNomina." "${linux_files[@]}"
