@@ -1,4 +1,6 @@
+#[allow(unused_imports)]
 use std::process::Command;
+#[allow(unused_imports)]
 use tauri::Manager;
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
@@ -9,12 +11,20 @@ fn greet(name: &str) -> String {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    #[cfg(target_os = "linux")]
+    {
+        // Evita el fallo de EGL y pantalla en blanco de WebKitGTK en Arch Linux / CachyOS
+        if std::env::var("WEBKIT_DISABLE_DMABUF_RENDERER").is_err() {
+            std::env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1");
+        }
+    }
+
     tauri::Builder::default()
-        .setup(|app| {
+        .setup(|_app| {
             #[cfg(not(debug_assertions))]
             {
                 let mut candidate_paths = Vec::new();
-                if let Ok(res_dir) = app.path().resource_dir() {
+                if let Ok(res_dir) = _app.path().resource_dir() {
                     candidate_paths.push(res_dir.join("backend"));
                     candidate_paths.push(res_dir.join("resources").join("backend"));
                 }
