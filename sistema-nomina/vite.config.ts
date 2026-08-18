@@ -9,36 +9,11 @@ const host = process.env.TAURI_DEV_HOST;
 export default defineConfig(async () => ({
   plugins: [
     react(),
-    tailwindcss(), // <- Agregado aquí
+    tailwindcss(),
   ],
 
-  // 3. Configure build chunk splitting
-  build: {
-    rollupOptions: {
-      output: {
-        manualChunks(id) {
-          if (id.includes("node_modules")) {
-            if (id.includes("react") || id.includes("react-dom")) {
-              return "vendor-react";
-            }
-            if (id.includes("lucide-react")) {
-              return "vendor-icons";
-            }
-            if (id.includes("sweetalert2") || id.includes("axios")) {
-              return "vendor-libs";
-            }
-            return "vendor";
-          }
-        },
-      },
-    },
-  },
-
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
-  //
-  // 1. prevent Vite from obscuring rust errors
   clearScreen: false,
-  // 2. tauri expects a fixed port, fail if that port is not available
   server: {
     port: 1420,
     strictPort: true,
@@ -51,7 +26,6 @@ export default defineConfig(async () => ({
         }
       : undefined,
     watch: {
-      // 3. tell Vite to ignore watching `src-tauri`
       ignored: ["**/src-tauri/**"],
     },
   },
