@@ -45,6 +45,7 @@ export const DistributionPdfPage: React.FC<DistributionPdfPageProps> = ({
     showSmtpModal,
     setShowSmtpModal,
     dispatchResult,
+    periodoNombre,
     searchTerm,
     setSearchTerm,
     distributionFilter,
@@ -214,7 +215,7 @@ export const DistributionPdfPage: React.FC<DistributionPdfPageProps> = ({
         isOpen={!!selectedPdfItem}
         onClose={() => setSelectedPdfItem(null)}
         item={selectedPdfItem}
-        conceptoPeriodo={conceptoPeriodo}
+        conceptoPeriodo={periodoNombre || conceptoPeriodo}
       />
 
       <SmtpConfigModal
