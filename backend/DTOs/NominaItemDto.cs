@@ -24,15 +24,21 @@ namespace backend.DTOs
         public decimal Isr { get; set; }
 
         // Totales Calculados
-        private decimal? _totalDevengado;
+       private decimal? _totalDevengado;
         public decimal TotalDevengado
         {
             get => _totalDevengado ?? (SueldoBase + Incentivo + Reembolso + HorasExtras);
             set => _totalDevengado = value;
         }
-
-        public decimal TotalDeducciones => Prestamo + CuotaCumpleanos + SeguroVehiculo + SeguroMedico + Sfs + Afp + Isr;
+        private decimal? _totalDeducciones;
+        public decimal TotalDeducciones
+        {
+            get => _totalDeducciones ?? (Prestamo + CuotaCumpleanos + SeguroVehiculo + SeguroMedico + Sfs + Afp + Isr);
+            set => _totalDeducciones = value;
+        }
         public decimal NetoAPagar { get; set; }
+
+    
 
         // Cruce con la Base de Datos SQLite
         public string? NombreEmpleado { get; set; }
