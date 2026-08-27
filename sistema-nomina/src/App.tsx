@@ -38,15 +38,10 @@ export function App() {
   useEffect(() => {
     async function checkForUpdates() {
       try {
-        const githubToken = import.meta.env.VITE_GITHUB_TOKEN || '';
-        const headers: Record<string, string> = githubToken ? {
-          Authorization: `Bearer ${githubToken}`,
-        } : {};
-
-      const update = await check(Object.keys(headers).length > 0 ? { headers } : undefined);
+        const update = await check();
         if (update) {
           console.log(`Nueva versión disponible: ${update.version} (actual: ${update.currentVersion})`);
-          await update.downloadAndInstall(undefined, Object.keys(headers).length > 0 ? { headers } : undefined);
+          await update.downloadAndInstall();
           await relaunch();
         }
       } catch (error) {

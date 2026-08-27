@@ -1,229 +1,55 @@
-name: Build Release & Auto-Update (Windows, macOS & Linux)
+name: Tauri v2 Release Process (CrabNebula Cloud)
 
 on:
   push:
-    branches: [ main, master ]
-    tags:
-      - 'v*'
+    branches:
+      - main
   workflow_dispatch:
 
-permissions:
-  contents: write
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CN_APPLICATION: "caxfr/sistema-nomina"
 
 jobs:
-  build-mac:
-    runs-on: macos-latest
-    permissions:
-      contents: write
-
+  # 1. Crear el borrador de la versión en CrabNebula
+  draft:
+    runs-on: ubuntu-22.04
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Install .NET 10 SDK
-        run: |
-          curl -sSL https://dot.net/v1/dotnet-install.sh | bash -s -- --version 10.0.110
-          echo "$HOME/.dotnet" >> $GITHUB_PATH
-          echo "DOTNET_ROOT=$HOME/.dotnet" >> $GITHUB_ENV
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - name: Create draft release
+        uses: crabnebula-dev/cloud-release@v0
         with:
-          node-version: 22
+          command: release draft ${{ env.CN_APPLICATION }} --framework tauri
+          api-key: ${{ secrets.CN_API_KEY }}
 
-      - name: Setup pnpm
-        run: |
-          corepack enable
-          corepack prepare pnpm@latest --activate
-
-      - name: Setup Rust (Native)
-        run: |
-          rustup target add x86_64-apple-darwin aarch64-apple-darwin
-
-      - name: Build .NET Backend for Intel & Apple Silicon macOS
-        run: |
-          cd backend
-          $HOME/.dotnet/dotnet publish -c Release -r osx-x64 --self-contained true -p:PublishSingleFile=true
-          $HOME/.dotnet/dotnet publish -c Release -r osx-arm64 --self-contained true -p:PublishSingleFile=true
-
-      - name: Build Tauri Desktop App for Intel Mac (x86_64)
-        env:
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-        run: |
-          mkdir -p sistema-nomina/src-tauri/resources
-          cp -r backend/bin/Release/net10.0/osx-x64/publish/* sistema-nomina/src-tauri/resources/
-          cd sistema-nomina
-          pnpm install
-          pnpm tauri build --target x86_64-apple-darwin
-
-      - name: Build Tauri Desktop App for Apple Silicon Mac (aarch64)
-        env:
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-        run: |
-          mkdir -p sistema-nomina/src-tauri/resources
-          cp -r backend/bin/Release/net10.0/osx-arm64/publish/* sistema-nomina/src-tauri/resources/
-          cd sistema-nomina
-          pnpm tauri build --target aarch64-apple-darwin
-
-      - name: Generate latest.json & Create/Update GitHub Release for macOS
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          shopt -s nullglob
-          VERSION=$(node -p "require('./sistema-nomina/src-tauri/tauri.conf.json').version")
-          RELEASE_TAG="${GITHUB_REF_NAME:-v$VERSION}"
-          if [[ ! "$RELEASE_TAG" =~ ^v ]]; then RELEASE_TAG="v$RELEASE_TAG"; fi
-          export RELEASE_TAG
-
-          node -e '
-          const fs = require("fs");
-          const path = require("path");
-          const { execSync } = require("child_process");
-          const tag = process.env.RELEASE_TAG;
-          const repo = "Covi117it/SistemaNomina";
-
-          let latest = { version: tag, notes: "Actualización de SistemaNomina " + tag, pub_date: new Date().toISOString(), platforms: {} };
-          try {
-            execSync(`gh release download ${tag} -p latest.json -D . --clobber`, { stdio: "ignore" });
-            if (fs.existsSync("latest.json")) latest = JSON.parse(fs.readFileSync("latest.json", "utf8"));
-          } catch(e) {}
-
-          function addPlatform(targetDir, platformKey, ext) {
-            if (!fs.existsSync(targetDir)) return;
-            const files = fs.readdirSync(targetDir);
-            const archive = files.find(f => f.endsWith(ext) && !f.endsWith(".sig"));
-            const sigFile = files.find(f => f.endsWith(ext + ".sig"));
-            if (archive && sigFile) {
-              latest.platforms[platformKey] = {
-                signature: fs.readFileSync(path.join(targetDir, sigFile), "utf8").trim(),
-                url: `https://github.com/${repo}/releases/download/${tag}/${archive}`
-              };
-            }
-          }
-          addPlatform("sistema-nomina/src-tauri/target/x86_64-apple-darwin/release/bundle/macos", "darwin-x86_64", ".app.tar.gz");
-          addPlatform("sistema-nomina/src-tauri/target/aarch64-apple-darwin/release/bundle/macos", "darwin-aarch64", ".app.tar.gz");
-          fs.writeFileSync("latest.json", JSON.stringify(latest, null, 2));
-          '
-
-          mac_files=(
-            sistema-nomina/src-tauri/target/x86_64-apple-darwin/release/bundle/dmg/*.dmg
-            sistema-nomina/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg
-            sistema-nomina/src-tauri/target/x86_64-apple-darwin/release/bundle/macos/*.app.tar.gz*
-            sistema-nomina/src-tauri/target/aarch64-apple-darwin/release/bundle/macos/*.app.tar.gz*
-            latest.json
-          )
-
-          gh release create "$RELEASE_TAG" --title "Release $RELEASE_TAG" --notes "Actualización automática de SistemaNomina." "${mac_files[@]}" || \
-          gh release upload "$RELEASE_TAG" "${mac_files[@]}" --clobber
-
-  build-linux:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
+  # 2. Compilar la aplicación para Windows, macOS y Linux
+  build_desktop:
+    needs: draft
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            platform: linux
+          - os: windows-latest
+            platform: windows
+          - os: macos-latest
+            platform: macos
+    runs-on: ${{ matrix.os }}
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Install System Dependencies for Tauri on Linux
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf fuse libfuse2
-
-      - name: Install .NET 10 SDK
-        run: |
-          curl -sSL https://dot.net/v1/dotnet-install.sh | bash -s -- --version 10.0.110
-          echo "$HOME/.dotnet" >> $GITHUB_PATH
-          echo "DOTNET_ROOT=$HOME/.dotnet" >> $GITHUB_ENV
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
-      - name: Setup pnpm
-        run: |
-          corepack enable
-          corepack prepare pnpm@latest --activate
-
-      - name: Build .NET Backend for Linux (x64)
-        run: |
-          cd backend
-          mkdir -p ../sistema-nomina/src-tauri/resources
-          $HOME/.dotnet/dotnet publish -c Release -r linux-x64 --self-contained true -p:PublishSingleFile=true -o ../sistema-nomina/src-tauri/resources/
-          chmod +x ../sistema-nomina/src-tauri/resources/backend
-
-      - name: Build Tauri Desktop App for Linux
-        env:
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-        run: |
-          cd sistema-nomina
-          pnpm install
-          pnpm tauri build
-
-      - name: Generate latest.json & Update GitHub Release with Linux
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          shopt -s nullglob
-          VERSION=$(node -p "require('./sistema-nomina/src-tauri/tauri.conf.json').version")
-          RELEASE_TAG="${GITHUB_REF_NAME:-v$VERSION}"
-          if [[ ! "$RELEASE_TAG" =~ ^v ]]; then RELEASE_TAG="v$RELEASE_TAG"; fi
-          export RELEASE_TAG
-
-          node -e '
-          const fs = require("fs");
-          const path = require("path");
-          const { execSync } = require("child_process");
-          const tag = process.env.RELEASE_TAG;
-          const repo = "Covi117it/SistemaNomina";
-
-          let latest = { version: tag, notes: "Actualización de SistemaNomina " + tag, pub_date: new Date().toISOString(), platforms: {} };
-          try {
-            execSync(`gh release download ${tag} -p latest.json -D . --clobber`, { stdio: "ignore" });
-            if (fs.existsSync("latest.json")) latest = JSON.parse(fs.readFileSync("latest.json", "utf8"));
-          } catch(e) {}
-
-          function addPlatform(targetDir, platformKey, ext) {
-            if (!fs.existsSync(targetDir)) return;
-            const files = fs.readdirSync(targetDir);
-            const archive = files.find(f => f.endsWith(ext) && !f.endsWith(".sig"));
-            const sigFile = files.find(f => f.endsWith(ext + ".sig"));
-            if (archive && sigFile) {
-              latest.platforms[platformKey] = {
-                signature: fs.readFileSync(path.join(targetDir, sigFile), "utf8").trim(),
-                url: `https://github.com/${repo}/releases/download/${tag}/${archive}`
-              };
-            }
-          }
-          addPlatform("sistema-nomina/src-tauri/target/release/bundle/appimage", "linux-x86_64", ".AppImage.tar.gz");
-          fs.writeFileSync("latest.json", JSON.stringify(latest, null, 2));
-          '
-
-          linux_files=(
-            sistema-nomina/src-tauri/target/release/bundle/deb/*.deb
-            sistema-nomina/src-tauri/target/release/bundle/appimage/*.AppImage
-            sistema-nomina/src-tauri/target/release/bundle/appimage/*.AppImage.tar.gz*
-            latest.json
-          )
-
-          gh release upload "$RELEASE_TAG" "${linux_files[@]}" --clobber || \
-          gh release create "$RELEASE_TAG" --title "Release $RELEASE_TAG" --notes "Actualización automática de SistemaNomina." "${linux_files[@]}"
-
-  build-windows:
-    runs-on: windows-latest
-    permissions:
-      contents: write
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
+      # Configurar .NET 10 para compilar el backend C#
       - name: Setup .NET 10 SDK
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
 
+      # Configurar Node.js y pnpm
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -235,69 +61,89 @@ jobs:
           corepack enable
           corepack prepare pnpm@latest --activate
 
-      - name: Build .NET Backend for Windows (x64)
+      # Configurar Rust
+      - name: Install stable Rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: stable
+          cache: true
+
+      # --- COMPILACIÓN EN LINUX ---
+      - name: Install Linux dependencies
+        if: matrix.platform == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf fuse libfuse2
+
+      - name: Build Backend & Tauri App for Linux
+        if: matrix.platform == 'linux'
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          cd backend
+          mkdir -p ../sistema-nomina/src-tauri/resources
+          dotnet publish -c Release -r linux-x64 --self-contained true -p:PublishSingleFile=true -o ../sistema-nomina/src-tauri/resources/
+          chmod +x ../sistema-nomina/src-tauri/resources/backend
+          cd ../sistema-nomina
+          pnpm install
+          pnpm tauri build
+
+      # --- COMPILACIÓN EN WINDOWS ---
+      - name: Build Backend & Tauri App for Windows
+        if: matrix.platform == 'windows'
         shell: bash
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         run: |
           cd backend
           mkdir -p ../sistema-nomina/src-tauri/resources
           dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o ../sistema-nomina/src-tauri/resources/
-
-      - name: Build Tauri Desktop App for Windows (x64)
-        env:
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-        shell: bash
-        run: |
-          cd sistema-nomina
+          cd ../sistema-nomina
           pnpm install
           pnpm tauri build
 
-      - name: Generate latest.json & Update GitHub Release with Windows
+      # --- COMPILACIÓN EN MACOS (Intel y Apple Silicon) ---
+      - name: Build Backend & Tauri App for macOS
+        if: matrix.platform == 'macos'
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        shell: bash
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         run: |
-          shopt -s nullglob
-          VERSION=$(node -p "require('./sistema-nomina/src-tauri/tauri.conf.json').version")
-          RELEASE_TAG="${GITHUB_REF_NAME:-v$VERSION}"
-          if [[ ! "$RELEASE_TAG" =~ ^v ]]; then RELEASE_TAG="v$RELEASE_TAG"; fi
-          export RELEASE_TAG
+          rustup target add x86_64-apple-darwin aarch64-apple-darwin
+          cd backend
+          dotnet publish -c Release -r osx-x64 --self-contained true -p:PublishSingleFile=true
+          dotnet publish -c Release -r osx-arm64 --self-contained true -p:PublishSingleFile=true
 
-          node -e '
-          const fs = require("fs");
-          const path = require("path");
-          const { execSync } = require("child_process");
-          const tag = process.env.RELEASE_TAG;
-          const repo = "Covi117it/SistemaNomina";
+          # Build Intel x86_64
+          mkdir -p ../sistema-nomina/src-tauri/resources
+          cp -r bin/Release/net10.0/osx-x64/publish/* ../sistema-nomina/src-tauri/resources/
+          cd ../sistema-nomina
+          pnpm install
+          pnpm tauri build --target x86_64-apple-darwin
 
-          let latest = { version: tag, notes: "Actualización de SistemaNomina " + tag, pub_date: new Date().toISOString(), platforms: {} };
-          try {
-            execSync(`gh release download ${tag} -p latest.json -D . --clobber`, { stdio: "ignore" });
-            if (fs.existsSync("latest.json")) latest = JSON.parse(fs.readFileSync("latest.json", "utf8"));
-          } catch(e) {}
+          # Build Apple Silicon aarch64
+          cd ../backend
+          cp -r bin/Release/net10.0/osx-arm64/publish/* ../sistema-nomina/src-tauri/resources/
+          cd ../sistema-nomina
+          pnpm tauri build --target aarch64-apple-darwin
 
-          function addPlatform(targetDir, platformKey, ext) {
-            if (!fs.existsSync(targetDir)) return;
-            const files = fs.readdirSync(targetDir);
-            const archive = files.find(f => f.endsWith(ext) && !f.endsWith(".sig"));
-            const sigFile = files.find(f => f.endsWith(ext + ".sig"));
-            if (archive && sigFile) {
-              latest.platforms[platformKey] = {
-                signature: fs.readFileSync(path.join(targetDir, sigFile), "utf8").trim(),
-                url: `https://github.com/${repo}/releases/download/${tag}/${archive}`
-              };
-            }
-          }
-          addPlatform("sistema-nomina/src-tauri/target/release/bundle/nsis", "windows-x86_64", ".nsis.zip");
-          addPlatform("sistema-nomina/src-tauri/target/release/bundle/msi", "windows-x86_64", ".msi.zip");
-          fs.writeFileSync("latest.json", JSON.stringify(latest, null, 2));
-          '
+      # 3. Subir los binarios generados a CrabNebula Cloud
+      - name: Upload assets to CrabNebula Cloud
+        uses: crabnebula-dev/cloud-release@v0
+        with:
+          command: release upload ${{ env.CN_APPLICATION }} --framework tauri
+          api-key: ${{ secrets.CN_API_KEY }}
 
-          win_files=(
-            sistema-nomina/src-tauri/target/release/bundle/nsis/*.exe
-            sistema-nomina/src-tauri/target/release/bundle/nsis/*.nsis.zip*
-            sistema-nomina/src-tauri/target/release/bundle/msi/*.msi*
-            latest.json
-          )
-
-          gh release upload "$RELEASE_TAG" "${win_files[@]}" --clobber || \
-          gh release create "$RELEASE_TAG" --title "Release $RELEASE_TAG" --notes "Actualización automática de SistemaNomina." "${win_files[@]}"
+  # 4. Publicar la versión final en la CDN de CrabNebula
+  publish:
+    needs: build_desktop
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Publish release
+        uses: crabnebula-dev/cloud-release@v0
+        with:
+          command: release publish ${{ env.CN_APPLICATION }} --framework tauri
+          api-key: ${{ secrets.CN_API_KEY }}
