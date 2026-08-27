@@ -1,6 +1,6 @@
 {
   "productName": "sistema-nomina",
-  "version": "0.1.9",
+  "version": "0.2.0",
   "identifier": "com.sistemanomina.app",
   "build": {
     "beforeDevCommand": "pnpm dev",
@@ -40,7 +40,7 @@
     "updater": {
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDlBNTcyOTQ2RTBEMDBERjgKUldUNERkRGdSaWxYbWlXSHJlT09tdmZGU2lNR2pVdm1IbUtlZ0JHQzlsOE9pR1lkckRjZzgvTk8K",
       "endpoints": [
-        "https://cdn.crabnebula.app/update/caxfr/sistema-nomina/{{target}}/{{arch}}/{{current_version}}"
+        "https://cdn.crabnebula.app/update/caxfr/sistema-nomina/{{target}}-{{arch}}/{{current_version}}"
       ]
     }
   }
