@@ -7,6 +7,8 @@ import { Loader2 } from 'lucide-react';
 import { check } from '@tauri-apps/plugin-updater';
 import { relaunch } from '@tauri-apps/plugin-process';
 import { invoke } from '@tauri-apps/api/core';
+import axios from 'axios';
+import { API_URL } from './config/api';
 
 const DashboardPage = lazy(() => import('./pages/DashboardPage').then((m) => ({ default: m.DashboardPage })));
 const EmployeesPage = lazy(() => import('./pages/EmployeesPage').then((m) => ({ default: m.EmployeesPage })));
@@ -36,6 +38,7 @@ export type CurrentView =
 
 export function App() {
 
+  // 1. Efecto de comprobación y logs de auto-actualización
   useEffect(() => {
     async function checkForUpdates() {
       try {
@@ -56,6 +59,36 @@ export function App() {
       }
     }
     checkForUpdates();
+  }, []);
+
+  // 2. Estado de verificación de salud del backend
+  const [isBackendReady, setIsBackendReady] = useState(false);
+
+  useEffect(() => {
+    let intervalId: any;
+    let attempts = 0;
+    const maxAttempts = 30; // 15 segundos máximo
+
+    const checkBackend = async () => {
+      try {
+        const res = await axios.get(`${API_URL}/api/health`, { timeout: 800 });
+        if (res.status === 200) {
+          setIsBackendReady(true);
+          clearInterval(intervalId);
+        }
+      } catch {
+        attempts++;
+        if (attempts >= maxAttempts) {
+          clearInterval(intervalId);
+          setIsBackendReady(true);
+        }
+      }
+    };
+
+    checkBackend();
+    intervalId = setInterval(checkBackend, 300);
+
+    return () => clearInterval(intervalId);
   }, []);
   
   const [currentView, setCurrentView] = useState<CurrentView>('dashboard');
@@ -104,15 +137,28 @@ export function App() {
   const [nextSuggestedCode, setNextSuggestedCode] = useState<string>('001');
 
   useEffect(() => {
-    if (currentView === 'dashboard' || currentView === 'main-directory') {
+    if (isBackendReady && (currentView === 'dashboard' || currentView === 'main-directory')) {
       fetchDbEmployees();
     }
-    if (currentView === 'create-employee') {
+    if (isBackendReady && currentView === 'create-employee') {
       employeeApi.fetchNextSuggestedCode().then((code) => {
         if (code) setNextSuggestedCode(code);
       }).catch(() => {});
     }
-  }, [currentView]);
+  }, [currentView, isBackendReady]);
+
+  // Pantalla de carga mientras el backend C# arranca
+  if (!isBackendReady) {
+    return (
+      <div className="min-h-screen bg-[#f4f7f4] flex flex-col items-center justify-center gap-4 p-8">
+        <Loader2 className="w-12 h-12 text-emerald-600 animate-spin" />
+        <div className="text-center">
+          <h2 className="text-lg font-bold text-slate-800">Iniciando Sistema de Nómina</h2>
+          <p className="text-sm text-slate-500 mt-1">Conectando con el servidor y la base de datos...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#f4f7f4] text-slate-900 font-sans antialiased p-4 md:p-8">
