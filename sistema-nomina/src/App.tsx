@@ -6,6 +6,7 @@ import { Toast } from './components/Toast';
 import { Loader2 } from 'lucide-react';
 import { check } from '@tauri-apps/plugin-updater';
 import { relaunch } from '@tauri-apps/plugin-process';
+import { invoke } from '@tauri-apps/api/core';
 
 const DashboardPage = lazy(() => import('./pages/DashboardPage').then((m) => ({ default: m.DashboardPage })));
 const EmployeesPage = lazy(() => import('./pages/EmployeesPage').then((m) => ({ default: m.EmployeesPage })));
@@ -40,9 +41,15 @@ export function App() {
       try {
         const update = await check();
         if (update) {
-          console.log(`Nueva versión disponible: ${update.version} (actual: ${update.currentVersion})`);
+          await invoke('log_terminal', { msg: `🔔 Nueva versión encontrada: v${update.version} (actual: v${update.currentVersion})` });
+          await invoke('log_terminal', { msg: '⏳ Descargando paquete de actualización en segundo plano...' });
+          
           await update.downloadAndInstall();
+          
+          await invoke('log_terminal', { msg: '✅ ¡Descarga completada! Reiniciando aplicación...' });
           await relaunch();
+        } else {
+          await invoke('log_terminal', { msg: '✨ La aplicación está actualizada a la última versión disponible.' });
         }
       } catch (error) {
         console.error('Error al comprobar actualizaciones:', error);
