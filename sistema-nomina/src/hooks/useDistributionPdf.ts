@@ -181,8 +181,8 @@ export const useDistributionPdf = (items: NominaItem[] = [], conceptoPeriodo: st
 
       const res = await axios.post(`${ENDPOINTS.NOMINA}/enviar-volantes-correo`, payload);
       setDispatchResult({
-        exitosos: res.data.exitosos || activeItems.length,
-        fallidos: res.data.fallidos || 0,
+        exitosos: typeof res.data?.exitosos === 'number' ? res.data.exitosos : 0,
+        fallidos: res.data?.fallidos || 0,
       });
     } catch (err: any) {
       const msg = err.response?.data?.mensaje || 'Error al conectar con el servidor SMTP de correo.';

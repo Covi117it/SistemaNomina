@@ -58,7 +58,11 @@ namespace backend.Services
 
                 message.Body = bodyBuilder.ToMessageBody();
 
-                               using var client = new MailKitSmtpClient();
+                using var client = new MailKitSmtpClient();
+
+                // Desactivar verificación de revocación de certificados para compatibilidad con macOS Keychain
+                client.CheckCertificateRevocation = false;
+                client.Timeout = 15000;
 
                 var socketOptions = settings.Port == 465 
                     ? SecureSocketOptions.SslOnConnect 
