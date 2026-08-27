@@ -1,6 +1,6 @@
 {
   "productName": "sistema-nomina",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "identifier": "com.sistemanomina.app",
   "build": {
     "beforeDevCommand": "pnpm dev",
@@ -11,6 +11,7 @@
   "app": {
     "windows": [
       {
+        "label": "main",
         "title": "sistema-nomina",
         "width": 800,
         "height": 600
