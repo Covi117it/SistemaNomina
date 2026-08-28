@@ -7,10 +7,8 @@ using backend.Services;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
-if (!builder.Environment.IsDevelopment())
-{
-    builder.WebHost.UseUrls("http://localhost:5289");
-}
+var port = Environment.GetEnvironmentVariable("PORT") ?? "5289";
+builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 ServerVersion serverVersion;
 try
