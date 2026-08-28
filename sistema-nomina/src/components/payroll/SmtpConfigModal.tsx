@@ -13,6 +13,7 @@ export const SmtpConfigModal: React.FC<SmtpConfigModalProps> = ({ isOpen, onClos
   const [smtpConfig, setSmtpConfig] = useState({
     server: 'smtp.gmail.com',
     port: 587,
+    username: '',
     senderEmail: '',
     senderName: 'Nómina Enfoco Institucional',
     password: '',
@@ -28,6 +29,7 @@ export const SmtpConfigModal: React.FC<SmtpConfigModalProps> = ({ isOpen, onClos
             setSmtpConfig({
               server: res.data.server || 'smtp.gmail.com',
               port: res.data.port || 587,
+              username: res.data.username || '',
               senderEmail: res.data.senderEmail || '',
               senderName: res.data.senderName || 'Nómina Enfoco Institucional',
               password: res.data.password || '',
@@ -87,7 +89,18 @@ export const SmtpConfigModal: React.FC<SmtpConfigModalProps> = ({ isOpen, onClos
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-600 mb-1">Correo Remitente / Usuario</label>
+            <label className="block text-xs font-bold text-slate-600 mb-1">Usuario SMTP / Login</label>
+            <input
+              type="text"
+              placeholder="b701a1001@smtp-brevo.com"
+              value={smtpConfig.username}
+              onChange={(e) => setSmtpConfig({ ...smtpConfig, username: e.target.value })}
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono font-bold"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-600 mb-1">Correo Remitente (From)</label>
             <input
               type="email"
               placeholder="tu-correo@empresa.com"
