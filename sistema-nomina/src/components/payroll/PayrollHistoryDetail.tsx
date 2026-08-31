@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Search, CheckCircle2, FileText, Mail, Loader2, FileSpreadsheet } from 'lucide-react';
+import { ArrowLeft, Search, CheckCircle2, FileSpreadsheet } from 'lucide-react';
+import { PdfPaystubButton } from './PdfPaystubButton';
+import { SendPaystubButton } from './SendPaystubButton';
 import { NominaItem } from '../../types/nomina';
 import { usePaystubEmailDispatcher } from '../../hooks/usePaystubEmailDispatcher';
 import { ENDPOINTS } from '../../config/api';
@@ -205,7 +207,7 @@ export const PayrollHistoryDetail: React.FC<PayrollHistoryDetailProps> = ({
                     <td className="p-3 text-right font-mono font-bold text-emerald-700">{formatCurrency(det.netoPagado)}</td>
                     <td className="p-3 text-center">
                       <div className="flex items-center justify-center gap-1.5">
-                        <button
+                        <PdfPaystubButton
                           onClick={() =>
                             onSelectPdfItem({
                               codigoEmpleado: det.codigoEmpleado,
@@ -229,37 +231,15 @@ export const PayrollHistoryDetail: React.FC<PayrollHistoryDetailProps> = ({
                               empleadoExiste: true,
                             })
                           }
-                          className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold rounded-lg transition-colors flex items-center gap-1 cursor-pointer border border-emerald-200"
-                          title="Ver volante PDF"
-                        >
-                          <FileText className="w-3.5 h-3.5 text-emerald-600" />
-                          PDF
-                        </button>
+                        />
 
-                        <button
-                          onClick={() => handleSendSingleEmail(det)}
-                          disabled={isSending || !det.emailDestinatario}
-                          className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all flex items-center gap-1 cursor-pointer border shadow-xs disabled:opacity-50 ${
-                            isSent
-                              ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
-                              : 'bg-emerald-500 hover:bg-emerald-600 text-white border-emerald-600'
-                          }`}
-                          title="Reenviar comprobante por correo a este empleado"
-                        >
-                          {isSending ? (
-                            <Loader2 className="w-3.5 h-3.5 animate-spin mx-auto" />
-                          ) : isSent ? (
-                            <>
-                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
-                              Enviado
-                            </>
-                          ) : (
-                            <>
-                              <Mail className="w-3.5 h-3.5" />
-                              Enviar
-                            </>
-                          )}
-                        </button>
+                        <SendPaystubButton
+                          onSend={() => handleSendSingleEmail(det)}
+                          isSending={isSending}
+                          isSent={isSent}
+                          hasEmail={Boolean(det.emailDestinatario)}
+                        />
+
                       </div>
                     </td>
                   </tr>

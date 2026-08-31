@@ -33,8 +33,11 @@ namespace backend.Services
         public static bool ValidarPasaporte(string? pasaporte)
         {
             if (string.IsNullOrWhiteSpace(pasaporte)) return false;
-            var clean = pasaporte.Trim();
-            return clean.Length >= 5 && clean.Length <= 20 && Regex.IsMatch(clean, @"^[a-zA-Z0-9]+$");
+            var clean = pasaporte.Trim().ToUpperInvariant();
+            bool esDominicano = Regex.IsMatch(clean, @"^[A-Z]{2}\d{7}$");
+            if (esDominicano) return true;
+            bool esOaciInternacional = Regex.IsMatch(clean, @"^[A-Z0-9]{6,9}$");
+            return esOaciInternacional;
         }
     }
 }

@@ -21,6 +21,15 @@ export const isValidCedulaRD = (cedula: string): boolean => {
 };
 
 export const isValidPasaporte = (pasaporte: string): boolean => {
-  const clean = pasaporte.trim();
-  return clean.length >= 5 && clean.length <= 20 && /^[a-zA-Z0-9]+$/.test(clean);
+  const clean = pasaporte.trim().toUpperCase();
+  const esDominicano = /^[A-Z]{2}\d{7}$/.test(clean);
+  const esOaciInternacional = /^[A-Z0-9]{6,9}$/.test(clean);
+  return esDominicano || esOaciInternacional;
+};
+
+export const getTipoPasaporte = (pasaporte: string): 'RD' | 'EXTRANJERO' | 'INVALIDO' => {
+  const clean = pasaporte.trim().toUpperCase();
+  if (/^[A-Z]{2}\d{7}$/.test(clean)) return 'RD';
+  if (/^[A-Z0-9]{6,9}$/.test(clean)) return 'EXTRANJERO';
+  return 'INVALIDO';
 };

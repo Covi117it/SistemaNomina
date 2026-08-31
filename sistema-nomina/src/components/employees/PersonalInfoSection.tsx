@@ -44,7 +44,7 @@ export const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
 
   const handleDocumentoInput = (rawVal: string) => {
     if (esPasaporte) {
-      const clean = rawVal.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 20);
+      const clean = rawVal.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 9);
       onChange('cedula', clean);
     } else {
       handleCedulaInput(rawVal);
@@ -188,8 +188,8 @@ export const PersonalInfoSection: React.FC<PersonalInfoSectionProps> = ({
             </div>
             <input
               type="text"
-              maxLength={esPasaporte ? 20 : 13}
-              placeholder={esPasaporte ? 'A12345678' : '001-0000000-0'}
+              maxLength={esPasaporte ? 9 : 13}
+              placeholder={esPasaporte ? 'AA1234567 (RD / OACI)' : '001-0000000-0'}
               value={formData.cedula || ''}
               onChange={(e) => handleDocumentoInput(e.target.value)}
               className={`w-full px-3.5 py-2.5 bg-slate-50 border rounded-xl text-xs font-mono font-medium focus:bg-white focus:outline-none transition-all ${

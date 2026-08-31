@@ -12,7 +12,7 @@ export const Toast: React.FC<ToastProps> = ({
   message,
   type,
   onClose,
-  durationMs = 3500, // Se oculta automáticamente a los 3.5 segundos
+  durationMs = 3500, 
 }) => {
   useEffect(() => {
     const timer = setTimeout(() => {

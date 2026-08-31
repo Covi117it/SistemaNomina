@@ -261,9 +261,9 @@ export function App() {
           />
         )}
 
-        {(currentView === 'payroll-processing' || currentView === 'payroll-history') && (
+          {(currentView === 'payroll-processing' || currentView === 'payroll-history') && (
           <PayrollManagementPage
-            key={currentView}
+            key="payroll-management-page"
             defaultTab={currentView === 'payroll-history' ? 'history' : 'processing'}
             previewNominaData={previewNominaData}
             isPayrollStagingMode={isPayrollStagingMode}

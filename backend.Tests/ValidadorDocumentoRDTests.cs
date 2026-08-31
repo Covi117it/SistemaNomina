@@ -21,11 +21,27 @@ namespace backend.Tests
         }
 
         [Theory]
-        [InlineData("PASAPORTE123", true)]
-        [InlineData("ABC12345", true)]
-        [InlineData("123", false)] // Muy corto
+        // Casos Válidos - Pasaporte Dominicano Oficial (2 letras + 7 dígitos)
+        [InlineData("AA1234567", true)]
+        [InlineData("RD7654321", true)]
+        [InlineData("aa1234567", true)]
+
+        // Casos Válidos - Pasaporte Extranjero OACI Doc 9303 (6 a 9 caracteres alfanuméricos)
+        [InlineData("A1234567", true)]
+        [InlineData("P123456", true)]
+        [InlineData("987654321", true)]
+        [InlineData("AB12CD", true)]
+
+        // Casos Inválidos
+        [InlineData("12345", false)]
+        [InlineData("ABC12345678", false)]
+        [InlineData("PASAPORTE123", false)]
+        [InlineData("AA-123456", false)]
+        [InlineData("AA 123456", false)]
         [InlineData("", false)]
-        public void ValidarPasaporte_DeberiaValidarFormatoYLongitud(string? pasaporte, bool resultadoEsperado)
+        [InlineData("   ", false)]
+        [InlineData(null, false)]
+        public void ValidarPasaporte_DeberiaValidarFormatoDualDominicanoYEstranjeroOACI(string? pasaporte, bool resultadoEsperado)
         {
             // Act
             bool esValido = ValidadorDocumentoRD.ValidarPasaporte(pasaporte);

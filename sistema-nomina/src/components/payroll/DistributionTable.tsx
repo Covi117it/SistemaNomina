@@ -3,7 +3,8 @@ import Swal from 'sweetalert2';
 import { NominaItem } from '../../types/nomina';
 import { formatCurrency } from '../../utils/formatters';
 import { FormSelect } from '../common/FormSelect';
-import { Mail, FileText } from 'lucide-react';
+import { Mail } from 'lucide-react';
+import { PdfPaystubButton } from './PdfPaystubButton';
 import { Pagination } from '../common/Pagination';
 
 export interface ExtendedNominaItem extends NominaItem {
@@ -157,15 +158,7 @@ export const DistributionTable: React.FC<DistributionTableProps> = ({
                     </div>
                   </td>
                   <td className="py-2 px-3 text-center">
-                    <button
-                      type="button"
-                      onClick={() => onSelectPdfItem?.(item)}
-                      className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-[11px] font-bold rounded-lg transition-all inline-flex items-center gap-1 cursor-pointer"
-                      title="Ver volante PDF"
-                    >
-                      <FileText className="w-3.5 h-3.5 text-emerald-600" />
-                      PDF
-                    </button>
+                    <PdfPaystubButton onClick={() => onSelectPdfItem?.(item)} />
                   </td>
                 </tr>
               );

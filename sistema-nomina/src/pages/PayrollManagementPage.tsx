@@ -82,7 +82,7 @@ export const PayrollManagementPage: React.FC<PayrollManagementPageProps> = ({
         }
       />
 
-      {activeSubTab === 'processing' && (
+        <div className={activeSubTab === 'processing' ? 'block' : 'hidden'}>
         <PayrollProcessingTab
           isPayrollStagingMode={isPayrollStagingMode}
           previewNominaData={previewNominaData}
@@ -94,11 +94,11 @@ export const PayrollManagementPage: React.FC<PayrollManagementPageProps> = ({
           onNavigateToDistribution={onNavigateToDistribution}
           onCancelStaging={onCancelStaging}
         />
-      )}
+      </div>
 
-      {activeSubTab === 'history' && (
+      <div className={activeSubTab === 'history' ? 'block' : 'hidden'}>
         <PayrollHistoryTab isActive={activeSubTab === 'history'} />
-      )}
+      </div>
     </div>
   );
 };
