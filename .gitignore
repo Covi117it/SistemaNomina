@@ -41,3 +41,4 @@ appsettings.Development.json
 # Credenciales y secretos
 *credentials*.json
 *.env
+.env.development

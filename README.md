@@ -4,9 +4,9 @@
 [![Tauri v2](https://img.shields.io/badge/Tauri-v2.0-24C8D8?logo=tauri&logoColor=white)](https://tauri.app/)
 [![React 19](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)](https://react.dev/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4.0-38B2AC?logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
-[![Database MariaDB / MySQL](https://img.shields.io/badge/Database-MySQL_8.0_/_MariaDB-4479A1?logo=mysql&logoColor=white)](https://aiven.io/)
+[![Database TiDB Serverless](https://img.shields.io/badge/Database-TiDB_Serverless_(MySQL)-4479A1?logo=mysql&logoColor=white)](https://tidbcloud.com/)
 [![Cloud Deployment](https://img.shields.io/badge/Cloud-Render-46E3B7?logo=render&logoColor=white)](https://sistemanomina.onrender.com)
-[![Status Production](https://img.shields.io/badge/Estado-Producción_v0.2.7-success)](#)
+[![Status Production](https://img.shields.io/badge/Estado-Producción_v0.2.8-success)](#)
 
 ---
 
@@ -147,8 +147,9 @@ Permite administrar el catálogo maestro de empleados, importar planillas de pag
 - **Swashbuckle / OpenAPI**: Documentación y consola interactiva de pruebas de la API disponible en `/swagger`.
 
 #### ☁️ Infraestructura y Base de Datos
-- **Base de Datos Principal**: MySQL 8.0 gestionada en la nube (**Aiven Cloud**) con conexión SSL obligatoria.
+- **Base de Datos Principal**: TiDB Cloud Serverless (Compatible con MySQL 8.0) alojado en AWS Oregon con conexión SSL/TLS obligatoria y disponibilidad 24/7 permanente.
 - **Alojamiento Backend**: Contenedor Linux Dockerizado en **Render** (`https://sistemanomina.onrender.com`).
+- **Monitoreo Continuo**: Sonda HTTP en **UptimeRobot** sobre `/api/health` cada 5 minutos para garantizar operación activa 24/7.
 - **Almacenamiento de Respaldos**: Google Drive Cloud Storage con retención inteligente de copias de seguridad.
 
 ---
@@ -181,7 +182,7 @@ graph TD
     end
 
     subgraph Persistencia ["Capa de Datos y Servicios Externos"]
-        DB[(Aiven Cloud MySQL 8.0)]
+        DB[(TiDB Cloud Serverless - MySQL)]
         GDrive[(Google Drive Backup Storage)]
         BrevoAPI[Brevo HTTPS / SMTP Server]
     end
@@ -445,6 +446,7 @@ En **Render**, el servicio está configurado como un *Web Service* conectado a e
 
 ## 📌 4. Historial de Versiones Recientes
 
+- **v0.2.8**: Migración a **TiDB Cloud Serverless** (AWS Oregon) para alta disponibilidad y base de datos permanente de por vida, monitoreo 24/7 con UptimeRobot sobre `/api/health` y sincronización completa de los 15 colaboradores con histórico de nóminas.
 - **v0.2.7**: Mejoras en recálculo en vivo de la mesa de trabajo de nómina y optimización de renderizado en componentes de distribución PDF.
 - **v0.2.6**: Soporte nativo de backend en la nube (Render) y despacho de correos vía Brevo HTTPS REST API.
 - **v0.2.5**: Integración del cliente Tauri con la URL de producción `https://sistemanomina.onrender.com`.
