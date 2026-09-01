@@ -25,6 +25,8 @@ appsettings.Development.json
 # Archivos pesados y binarios compilados
 **/publish/
 **/src-tauri/resources/
-# Archivos Excel de prueba
+# Archivos Excel de prueba y temporales
 *.xlsx
 *.xls
+.~lock.*#
+~$*
