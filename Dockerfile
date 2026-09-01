@@ -10,5 +10,8 @@ FROM mcr.microsoft.com/dotnet/aspnet:10.0-preview AS final
 WORKDIR /app
 COPY --from=build /app/publish .
 ENV ASPNETCORE_URLS=http://0.0.0.0:8080
+ENV DOTNET_USE_POLLING_FILE_WATCHER=true
+ENV DOTNET_hostBuilder__reloadConfigOnChange=false
+ENV ASPNETCORE_hostBuilder__reloadConfigOnChange=false
 EXPOSE 8080
 ENTRYPOINT ["dotnet", "backend.dll"]
