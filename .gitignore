@@ -13,6 +13,11 @@
 *.db-wal
 appsettings.Development.json
 
+# Bases de datos, backups y volcados SQL
+*.sql
+*.bak
+*.dump
+
 # Rust & Tauri
 **/src-tauri/target/
 **/src-tauri/gen/
@@ -22,11 +27,17 @@ appsettings.Development.json
 .vscode/
 *.user
 *.suo
+
 # Archivos pesados y binarios compilados
 **/publish/
 **/src-tauri/resources/
+
 # Archivos Excel de prueba y temporales
 *.xlsx
 *.xls
 .~lock.*#
 ~$*
+
+# Credenciales y secretos
+*credentials*.json
+*.env
