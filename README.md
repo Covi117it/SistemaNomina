@@ -544,6 +544,10 @@ dotnet test --logger "console;verbosity=normal"
 
 ### Compilación y Empaquetado de la Aplicación de Escritorio
 
+La aplicación distribuida consume el backend en la nube (`https://sistemanomina.onrender.com`). No inicia ni empaqueta un servidor .NET local ni archivos de configuración del backend. El workflow de GitHub Actions compila únicamente el cliente Tauri para Linux, Windows y macOS.
+
+`VITE_API_URL` permite cambiar la URL de la API al compilar el frontend; es un valor público y nunca debe contener credenciales. En desarrollo, la URL predeterminada sigue siendo `http://localhost:5289`.
+
 Para generar los instaladores listos para distribución final a los usuarios:
 
 ```bash
@@ -570,6 +574,13 @@ docker run -d -p 5289:5289 -e PORT=5289 --name nomina-api sistema-nomina-backend
 ```
 
 En **Render**, el servicio está configurado como un *Web Service* conectado a este repositorio con despliegue continuo ante cada commit en la rama principal.
+
+Configura `ConnectionStrings__DefaultConnection` con la conexión real de TiDB en las variables de entorno del servicio de Render. Mantén las credenciales fuera del repositorio y de los instaladores; no inyectes `TIDB_CONNECTION_STRING` en el workflow de escritorio. Configura también los secretos de los servicios utilizados por el backend en ese mismo entorno.
+
+Tras desplegar, verifica `/api/health` y el inicio de sesión desde la aplicación. La conexión de producción debe estar disponible antes del arranque, porque el backend inicializa la base de datos antes de aceptar peticiones. Una contraseña de plantilla no permite iniciar el servicio.
+
+Para desarrollo local, define `ConnectionStrings__DefaultConnection` o usa `backend/appsettings.Development.json` (ignorado por Git) con el entorno `Development`.
+
 
 ---
 
