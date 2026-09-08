@@ -1,0 +1,157 @@
+using backend.Application.Features.Empleados.Queries;
+using backend.Models;
+using backend.Services;
+using backend.Common;
+using backend.Data;
+
+namespace backend.Endpoints
+{
+    public static class EmpleadosEndpoints
+    {
+        public static void MapEmpleadosEndPoints(this IEndpointRouteBuilder app)
+        {
+            var group = app.MapGroup("/api/empleados")
+                           .WithTags("Empleados");
+
+            // Consulta de empleados con búsqueda, filtrado y paginación
+            group.MapGet("/", async (string? search, string? status, int? page, int? pageSize, IEmpleadoService empleadoService) =>
+            {
+                int pageNum = page ?? 1;
+                int sizeNum = pageSize ?? 10;
+                var resultado = await empleadoService.ObtenerEmpleadosAsync(search, status, pageNum, sizeNum);
+                return Results.Ok(new
+                {
+                    totalTotal = resultado.TotalTotal,
+                    totalActivos = resultado.TotalActivos,
+                    totalInactivos = resultado.TotalInactivos,
+                    totalFiltrados = resultado.TotalFiltrados,
+                    page = resultado.Page,
+                    pageSize = resultado.PageSize,
+                    totalPages = resultado.TotalPages,
+                    empleados = resultado.Empleados
+                });
+            })
+            .RequirePermission(Permissions.EmpleadosRead)
+            .WithSummary("Obtiene la lista de empleados con conteos de resumen y filtrado desde SQLite.");
+
+            // Próximo código correlativo sugerido para un empleado nuevo
+            group.MapGet("/siguiente-codigo", async (IEmpleadoService empleadoService) =>
+            {
+                var codigo = await empleadoService.ObtenerSiguienteCodigoSugeridoAsync();
+                return Results.Ok(new { siguienteCodigo = codigo });
+            })
+            .RequirePermission(Permissions.EmpleadosRead)
+            .WithSummary("Obtiene el siguiente código autoincrementable sugerido de empleado desde el servidor.");
+
+            // Registro de nuevo empleado con validación de documento
+            group.MapPost("/", async (Empleado nuevoEmpleado, IEmpleadoService empleadoService, AppDbContext db, HttpContext httpContext) =>
+            {
+                var resultado = await empleadoService.CrearEmpleadoAsync(nuevoEmpleado);
+                if (!resultado.Exito)
+                {
+                    return Results.BadRequest(new { mensaje = resultado.MensajeError });
+                }
+
+                var currentUser = httpContext.Items["CurrentUser"] as Usuario;
+                if (currentUser != null)
+                {
+                    var ip = httpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1";
+                    await AuditoriaHelper.RegistrarAsync(db, currentUser.Id, "EMPLEADOS", "action", $"Creó al colaborador #{resultado.Empleado!.Codigo}", $"{resultado.Empleado.Nombres} • Puesto: {resultado.Empleado.Puesto}", ip);
+                }
+
+                return Results.Created($"/api/empleados/{resultado.Empleado!.Codigo}", resultado.Empleado);
+            })
+            .RequirePermission(Permissions.EmpleadosCreate)
+            .WithSummary("Registra un nuevo empleado con validación de documento.");
+
+            // Actualización de datos de un empleado por código
+            group.MapPut("/{codigo}", async (string codigo, Empleado datosEditados, IEmpleadoService empleadoService, AppDbContext db, HttpContext httpContext) =>
+            {
+                var resultado = await empleadoService.ActualizarEmpleadoAsync(codigo, datosEditados);
+                if (!resultado.Exito)
+                {
+                    if (resultado.MensajeError != null && resultado.MensajeError.Contains("No se encontró"))
+                    {
+                        return Results.NotFound(new { mensaje = resultado.MensajeError });
+                    }
+                    return Results.BadRequest(new { mensaje = resultado.MensajeError });
+                }
+
+                var currentUser = httpContext.Items["CurrentUser"] as Usuario;
+                if (currentUser != null)
+                {
+                    var ip = httpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1";
+                    await AuditoriaHelper.RegistrarAsync(db, currentUser.Id, "EMPLEADOS", "action", $"Actualizó datos del colaborador #{codigo}", $"{datosEditados.Nombres} • Puesto: {datosEditados.Puesto}", ip);
+                }
+
+                return Results.Ok(resultado.Empleado);
+            })
+            .RequirePermission(Permissions.EmpleadosEdit)
+            .WithSummary("Actualiza los datos de un empleado por su código.");
+
+            // Guardado o actualización masiva en lote
+            group.MapPost("/guardar-lote", async (List<Empleado> empleadosLote, IEmpleadoService empleadoService) =>
+            {
+                if (empleadosLote == null || empleadosLote.Count == 0)
+                {
+                    return Results.BadRequest(new { mensaje = "La lista de empleados a guardar no contiene registros." });
+                }
+                int procesados = await empleadoService.GuardarLoteAsync(empleadosLote);
+                return Results.Ok(new 
+                { 
+                    mensaje = "Sincronización masiva de empleados completada con éxito.", 
+                    totalProcesados = procesados 
+                });
+            })
+            .RequirePermission(Permissions.EmpleadosCreate)
+            .WithSummary("Guarda o actualiza masivamente el lote de empleados.");
+            // Eliminación de empleado por código
+            group.MapDelete("/{codigo}", async (string codigo, IEmpleadoService empleadoService, AppDbContext db, HttpContext httpContext) =>
+            {
+                bool eliminado = await empleadoService.EliminarEmpleadoAsync(codigo);
+                if (!eliminado)
+                {
+                    return Results.NotFound(new { mensaje = $"No se encontró ningún empleado con el código '{codigo}'." });
+                }
+
+                var currentUser = httpContext.Items["CurrentUser"] as Usuario;
+                if (currentUser != null)
+                {
+                    var ip = httpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1";
+                    await AuditoriaHelper.RegistrarAsync(db, currentUser.Id, "EMPLEADOS", "warn", $"Eliminó al colaborador #{codigo}", "Registro eliminado del sistema", ip);
+                }
+
+                return Results.Ok(new { mensaje = $"Empleado con código '{codigo}' eliminado correctamente." });
+            })
+            .RequirePermission(Permissions.EmpleadosDelete)
+            .WithSummary("Elimina un empleado individual por su código.");
+
+            // Cambio masivo de estatus
+            group.MapPost("/toggle-estatus-todos", async (string nuevoEstatus, IEmpleadoService empleadoService) =>
+            {
+                if (string.IsNullOrWhiteSpace(nuevoEstatus))
+                {
+                    return Results.BadRequest(new { mensaje = "Debe especificar un estatus válido (ej. ACTIVO o INACTIVO)." });
+                }
+                int filasAfectadas = await empleadoService.CambiarEstatusTodosAsync(nuevoEstatus);
+                return Results.Ok(new 
+                { 
+                    mensaje = $"Se actualizó el estatus a '{nuevoEstatus.ToUpperInvariant().Trim()}' para todos los empleados.", 
+                    totalAfectados = filasAfectadas 
+                });
+            })
+            .RequirePermission(Permissions.EmpleadosEdit)
+            .WithSummary("Cambia el estatus de todos los empleados masivamente a ACTIVO o INACTIVO.");
+
+
+            group.MapGet("/exportar-excel", async (ObtenerExportacionEmpleadosQueryHandler handler) =>
+            {
+                var resultado = await handler.HandleAsync();
+                return Results.File(resultado.Bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", resultado.NombreArchivo);
+            })
+            .RequirePermission(Permissions.EmpleadosRead)
+            .WithSummary("Exporta la lista de empleados a un archivo Excel (.xlsx).");
+
+        }
+    }
+}

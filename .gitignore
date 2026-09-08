@@ -1,0 +1,47 @@
+# Frontend & Node
+**/node_modules/
+**/dist/
+**/dist-ssr/
+**/.vite/
+*.local
+
+# .NET Backend
+**/bin/
+**/obj/
+*.db
+*.db-shm
+*.db-wal
+appsettings.Development.json
+
+# Bases de datos, backups y volcados SQL
+*.sql
+*.bak
+*.dump
+
+# Rust & Tauri
+**/src-tauri/target/
+**/src-tauri/gen/
+
+# Sistema y Editores
+.DS_Store
+.vscode/
+*.user
+*.suo
+
+# Archivos pesados y binarios compilados
+**/publish/
+**/src-tauri/resources/
+
+# Archivos Excel de prueba y temporales
+*.xlsx
+*.xls
+.~lock.*#
+~$*
+
+# Credenciales y secretos
+*credentials*.json
+*.env
+.env.development
+
+# Pruebas y tests locales
+backend.Tests/

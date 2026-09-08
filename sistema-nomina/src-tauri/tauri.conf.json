@@ -1,0 +1,47 @@
+{
+  "productName": "sistema-nomina",
+  "version": "0.3.3",
+  "identifier": "com.sistemanomina.app",
+  "build": {
+    "beforeDevCommand": "pnpm dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "pnpm build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "sistema-nomina",
+        "width": 800,
+        "height": 600
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "createUpdaterArtifacts": true,
+    "targets": "all",
+    "resources": [
+      "resources/*"
+    ],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ]
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDlBNTcyOTQ2RTBEMDBERjgKUldUNERkRGdSaWxYbWlXSHJlT09tdmZGU2lNR2pVdm1IbUtlZ0JHQzlsOE9pR1lkckRjZzgvTk8K",
+      "endpoints": [
+        "https://cdn.crabnebula.app/update/caxfr/sistema-nomina/{{target}}-{{arch}}/{{current_version}}"
+      ]
+    }
+  }
+}

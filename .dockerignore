@@ -1,0 +1,15 @@
+**/.git
+**/.github
+**/bin/
+**/obj/
+**/publish/
+**/node_modules/
+**/dist/
+*.db
+*.db-shm
+*.db-wal
+*.sql
+*.zip
+appsettings.Development.json
+*credentials*.json
+.env*

@@ -1,0 +1,149 @@
+name: Tauri v2 Release Process (CrabNebula Cloud)
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CN_APPLICATION: "caxfr/sistema-nomina"
+
+jobs:
+  # 1. Crear el borrador de la versión en CrabNebula
+  draft:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create draft release
+        uses: crabnebula-dev/cloud-release@v0
+        with:
+          command: release draft ${{ env.CN_APPLICATION }} --framework tauri
+          api-key: ${{ secrets.CN_API_KEY }}
+
+  # 2. Compilar la aplicación para Windows, macOS y Linux
+  build_desktop:
+    needs: draft
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            platform: linux
+          - os: windows-latest
+            platform: windows
+          - os: macos-latest
+            platform: macos
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Configurar .NET 10 para compilar el backend C#
+      - name: Setup .NET 10 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      # Configurar Node.js y pnpm
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup pnpm
+        shell: bash
+        run: |
+          corepack enable
+          corepack prepare pnpm@latest --activate
+
+      # Configurar Rust
+      - name: Install stable Rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: stable
+          cache: true
+
+      # --- COMPILACIÓN EN LINUX ---
+      - name: Install Linux dependencies
+        if: matrix.platform == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf fuse libfuse2
+
+      - name: Build Backend & Tauri App for Linux
+        if: matrix.platform == 'linux'
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          cd backend
+          mkdir -p ../sistema-nomina/src-tauri/resources
+          dotnet publish -c Release -r linux-x64 --self-contained true -p:PublishSingleFile=true -o ../sistema-nomina/src-tauri/resources/
+          chmod +x ../sistema-nomina/src-tauri/resources/backend
+          cd ../sistema-nomina
+          pnpm install
+          pnpm tauri build
+
+      # --- COMPILACIÓN EN WINDOWS ---
+      - name: Build Backend & Tauri App for Windows
+        if: matrix.platform == 'windows'
+        shell: bash
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          cd backend
+          mkdir -p ../sistema-nomina/src-tauri/resources
+          dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o ../sistema-nomina/src-tauri/resources/
+          cd ../sistema-nomina
+          pnpm install
+          pnpm tauri build
+
+      # --- COMPILACIÓN EN MACOS (Intel y Apple Silicon) ---
+      - name: Build Backend & Tauri App for macOS
+        if: matrix.platform == 'macos'
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          rustup target add x86_64-apple-darwin aarch64-apple-darwin
+          cd backend
+          dotnet publish -c Release -r osx-x64 --self-contained true -p:PublishSingleFile=true
+          dotnet publish -c Release -r osx-arm64 --self-contained true -p:PublishSingleFile=true
+
+          # Build Intel x86_64
+          mkdir -p ../sistema-nomina/src-tauri/resources
+          cp -r bin/Release/net10.0/osx-x64/publish/* ../sistema-nomina/src-tauri/resources/
+          cd ../sistema-nomina
+          pnpm install
+          pnpm tauri build --target x86_64-apple-darwin
+
+          # Build Apple Silicon aarch64
+          cd ../backend
+          cp -r bin/Release/net10.0/osx-arm64/publish/* ../sistema-nomina/src-tauri/resources/
+          cd ../sistema-nomina
+          pnpm tauri build --target aarch64-apple-darwin
+
+      # 3. Subir los binarios generados a CrabNebula Cloud
+      - name: Upload assets to CrabNebula Cloud
+        uses: crabnebula-dev/cloud-release@v0
+        with:
+          command: release upload ${{ env.CN_APPLICATION }} --framework tauri
+          api-key: ${{ secrets.CN_API_KEY }}
+
+  # 4. Publicar la versión final en la CDN de CrabNebula
+  publish:
+    needs: build_desktop
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Publish release
+        uses: crabnebula-dev/cloud-release@v0
+        with:
+          command: release publish ${{ env.CN_APPLICATION }} --framework tauri
+          api-key: ${{ secrets.CN_API_KEY }}
