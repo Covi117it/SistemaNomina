@@ -124,6 +124,11 @@ namespace backend.Endpoints
 
              userGroup.MapPost("/", async (CrearUsuarioDto dto, AppDbContext db, HttpContext httpContext) =>
             {
+                if (string.IsNullOrWhiteSpace(dto.Rol) || !Permissions.DefaultRolePermissions.ContainsKey(dto.Rol))
+                {
+                    return Results.BadRequest(new { message = "Selecciona un rol válido. No se guardaron los cambios." });
+                }
+
                 var currentUser = httpContext.Items["CurrentUser"] as Usuario;
 
                 if (string.Equals(dto.Rol, "Admin", StringComparison.OrdinalIgnoreCase) && !string.Equals(currentUser?.Rol,
@@ -175,6 +180,11 @@ namespace backend.Endpoints
 
             userGroup.MapPut("/{id:int}", async (int id, ActualizarUsuarioDto dto, AppDbContext db, HttpContext httpContext) =>
             {
+                if (string.IsNullOrWhiteSpace(dto.Rol) || !Permissions.DefaultRolePermissions.ContainsKey(dto.Rol))
+                {
+                    return Results.BadRequest(new { message = "Selecciona un rol válido. No se guardaron los cambios." });
+                }
+
                 var usuario = await db.Usuarios.FindAsync(id);
                 if (usuario == null) return Results.NotFound(new { message = "Usuario no encontrado." });
 

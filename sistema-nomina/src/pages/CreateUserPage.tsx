@@ -61,7 +61,7 @@ export const CreateUserPage: React.FC<CreateUserPageProps> = ({
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [rol, setRol] = useState('RRHH');
+  const [rol, setRol] = useState(() => isEditMode && initialData ? initialData.rol : 'RRHH');
   const [activo, setActivo] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -110,6 +110,11 @@ export const CreateUserPage: React.FC<CreateUserPageProps> = ({
     e.preventDefault();
     setError(null);
 
+    if (!ROLES.some((option) => option.value === rol)) {
+      setError('Selecciona un rol válido antes de guardar.');
+      return;
+    }
+
     if (!nombreCompleto.trim()) {
       setError('El nombre completo es obligatorio.');
       return;
@@ -139,7 +144,9 @@ export const CreateUserPage: React.FC<CreateUserPageProps> = ({
           email: email.trim().toLowerCase(),
           password: password.trim() ? password : undefined,
           rol: rol,
-          permisosJson: JSON.stringify(getPermissionsForRole(rol)),
+          permisosJson: rol === initialData.rol
+            ? initialData.permisosJson
+            : JSON.stringify(getPermissionsForRole(rol)),
           activo: activo,
         };
 

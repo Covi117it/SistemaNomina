@@ -9,6 +9,7 @@ import {
   RefreshCw 
 } from 'lucide-react';
 import Swal from 'sweetalert2';
+import axios from 'axios';
 import { authApi } from '../service/api/authApi';
 import { Usuario, CrearUsuarioRequest, ActualizarUsuarioRequest } from '../types/usuario';
 import { PageHeader } from '../components/common/PageHeader';
@@ -63,11 +64,16 @@ export const UsersManagementPage: React.FC<UsersManagementPageProps> = ({
       const data = await authApi.fetchUsuarios();
       setUsers(data);
     } catch (err) {
-      console.error('Error al cargar usuarios:', err);
+      const status = axios.isAxiosError(err) ? err.response?.status : undefined;
+      const message = status === 403
+        ? 'Tu cuenta no tiene permiso para gestionar usuarios. Contacta a un administrador para revisar tu rol.'
+        : status === 401
+          ? 'Tu sesión ya no es válida. Cierra sesión e inicia sesión nuevamente.'
+          : 'No se pudieron cargar los usuarios del sistema. Comprueba la conexión e inténtalo de nuevo.';
       Swal.fire({
         icon: 'error',
         title: 'Error',
-        text: 'No se pudieron cargar los usuarios del sistema.',
+        text: message,
       });
     } finally {
       setLoading(false);

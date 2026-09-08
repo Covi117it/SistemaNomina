@@ -26,8 +26,18 @@ export const FormSelect: React.FC<FormSelectProps> = ({
   disabled = false,
   className = '',
 }) => {
+  const selectedOption = options.find((option) => option.value === value);
+
   return (
-    <Select.Root value={value} onValueChange={onChange} disabled={disabled}>
+    <Select.Root
+      value={value}
+      onValueChange={(nextValue) => {
+        // El select nativo de Radix puede emitir un valor vacío al sincronizarse.
+        // Solo las opciones del menú pueden reemplazar la selección actual.
+        if (options.some((option) => option.value === nextValue)) onChange(nextValue);
+      }}
+      disabled={disabled}
+    >
       <Select.Trigger
         className={`inline-flex items-center justify-between gap-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 px-3.5 py-2 rounded-xl text-xs font-bold text-slate-800 shadow-sm cursor-pointer focus:bg-white focus:border-emerald-500 focus:outline-none transition-all ${
           disabled ? 'opacity-50 cursor-not-allowed' : ''
@@ -35,7 +45,7 @@ export const FormSelect: React.FC<FormSelectProps> = ({
       >
         <div className="flex items-center gap-2">
           {icon}
-          <Select.Value placeholder={placeholder} />
+          <Select.Value placeholder={placeholder}>{selectedOption?.label}</Select.Value>
         </div>
         <Select.Icon>
           <ChevronDown className="w-3.5 h-3.5 text-slate-400" />

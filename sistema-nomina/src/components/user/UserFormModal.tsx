@@ -30,7 +30,7 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
   const [nombreCompleto, setNombreCompleto] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [rol, setRol] = useState('RRHH');
+  const [rol, setRol] = useState(() => userToEdit?.rol ?? 'RRHH');
   const [activo, setActivo] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -60,6 +60,11 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
     e.preventDefault();
     setError(null);
 
+    if (!ROLES.some((option) => option.value === rol)) {
+      setError('Selecciona un rol válido antes de guardar.');
+      return;
+    }
+
     if (!isEdit && (!password || password.length < 6)) {
       setError('La contraseña debe tener al menos 6 caracteres.');
       return;
@@ -73,7 +78,9 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
           email,
           password: password.trim() ? password : undefined,
           rol,
-          permisosJson: JSON.stringify(getPermissionsForRole(rol)),
+          permisosJson: rol === userToEdit.rol
+            ? userToEdit.permisosJson
+            : JSON.stringify(getPermissionsForRole(rol)),
           activo,
         };
         await onSave(updateData, true, userToEdit.id);
