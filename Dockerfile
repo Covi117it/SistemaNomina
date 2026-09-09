@@ -14,4 +14,5 @@ ENV DOTNET_USE_POLLING_FILE_WATCHER=true
 ENV DOTNET_hostBuilder__reloadConfigOnChange=false
 ENV ASPNETCORE_hostBuilder__reloadConfigOnChange=false
 EXPOSE 8080
+USER app
 ENTRYPOINT ["dotnet", "backend.dll"]

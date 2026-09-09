@@ -16,7 +16,8 @@ namespace backend.Application.Features.Nomina.Commands
         List<NominaItemDto> ItemsNomina,
         int? Mes,
         string? Quincena,
-        string? Concepto
+        string? Concepto,
+        int? Anio = null
     );
 
     public class ProcesarQuincenaCommandHandler
@@ -39,7 +40,7 @@ namespace backend.Application.Features.Nomina.Commands
                 return Results.BadRequest(new { mensaje = "La lista de nómina enviada está vacía." });
             }
 
-            // Validación de existencia de empleados en catálogo
+            // validación de existencia de empleados en catálogo
             var codigosUnicos = command.ItemsNomina
                                        .Select(i => i.CodigoEmpleado.Trim())
                                        .Distinct()
@@ -60,9 +61,11 @@ namespace backend.Application.Features.Nomina.Commands
             }
 
             // Datos del período
+            int anioVal = (command.Anio.HasValue && command.Anio.Value >= 2000) ? command.Anio.Value : DateTime.UtcNow.Year;
             int mesVal = (command.Mes.HasValue && command.Mes.Value >= 1 && command.Mes.Value <= 12) ? command.Mes.Value : DateTime.UtcNow.Month;
             string quincenaVal = string.IsNullOrWhiteSpace(command.Quincena) ? "1Q" : command.Quincena;
             string conceptoVal = string.IsNullOrWhiteSpace(command.Concepto) ? $"Nómina Quincenal {quincenaVal} - Mes {mesVal}" : command.Concepto;
+            
 
             // Guardado transaccional
             await using var transaction = await _db.Database.BeginTransactionAsync();
@@ -71,6 +74,7 @@ namespace backend.Application.Features.Nomina.Commands
             {
                 var nuevoPeriodo = new NominaPeriodo
                 {
+                    Anio = anioVal,
                     Mes = mesVal,
                     Quincena = quincenaVal,
                     Concepto = conceptoVal,

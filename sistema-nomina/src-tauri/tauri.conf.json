@@ -1,6 +1,6 @@
 {
   "productName": "sistema-nomina",
-  "version": "0.3.5",
+  "version": "0.3.6",
   "identifier": "com.sistemanomina.app",
   "build": {
     "beforeDevCommand": "pnpm dev",
@@ -18,7 +18,7 @@
       }
     ],
     "security": {
-      "csp": null
+      "csp": "default-src 'self' tauri:; connect-src 'self' https://sistemanomina.onrender.com http://localhost:5289; style-src 'self' 'unsafe-inline'; img-src 'self' data: asset:;"
     }
   },
   "bundle": {

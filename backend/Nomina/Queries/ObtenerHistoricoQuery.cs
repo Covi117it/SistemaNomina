@@ -29,9 +29,9 @@ namespace backend.Application.Features.Nomina.Queries
                               .AsNoTracking()
                               .AsQueryable();
 
-            if (query.Anio.HasValue && query.Anio.Value > 0)
+             if (query.Anio.HasValue && query.Anio.Value > 0)
             {
-                dbQuery = dbQuery.Where(p => p.FechaProcesado.Year == query.Anio.Value);
+                dbQuery = dbQuery.Where(p => p.Anio == query.Anio.Value);
             }
 
             if (query.Mes.HasValue && query.Mes.Value > 0)

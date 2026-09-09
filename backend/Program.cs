@@ -6,6 +6,7 @@ using backend.Endpoints;
 using backend.Services;  
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using System.Threading.RateLimiting;    
 
 var builder = WebApplication.CreateBuilder(args);
 var port = Environment.GetEnvironmentVariable("PORT") ?? "5289";
@@ -41,6 +42,7 @@ builder.Services.AddScoped<EliminarEventoCommandHandler>();
 builder.Services.AddScoped<EnviarVolantesCommandHandler>();
 builder.Services.AddScoped<ObtenerExportacionNominaQueryHandler>();
 builder.Services.AddScoped<ObtenerExportacionEmpleadosQueryHandler>();
+builder.Services.AddHttpClient();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -48,11 +50,18 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-    options.AddFixedWindowLimiter("LoginLimiter", opt =>
+    options.AddPolicy("LoginLimiter", httpContext =>
     {
-        opt.PermitLimit = 5;
-        opt.Window = TimeSpan.FromMinutes(1);
-        opt.QueueLimit = 0;
+        var clientIp = httpContext.Request.Headers["CF-Connecting-IP"].FirstOrDefault()
+            ?? httpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault()?.Split(',')[0].Trim()
+            ?? httpContext.Connection.RemoteIpAddress?.ToString()
+            ?? "anonymous";
+        return RateLimitPartition.GetFixedWindowLimiter(clientIp, _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 5,
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0
+        });
     });
 });
 
@@ -95,6 +104,16 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors("AllowTauriApp");
 app.UseRateLimiter();
+
+app.Use(async (context, next) =>
+{
+    context.Response.Headers.Append("X-Content-Type-Options", "nosniff");
+    context.Response.Headers.Append("X-Frame-Options", "DENY");
+    context.Response.Headers.Append("Referrer-Policy", "strict-origin-when-cross-origin");
+    context.Response.Headers.Append("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+    context.Response.Headers.Remove("Server");
+    await next();
+});
 
 app.MapGet("/api/health", () => Results.Ok(new 
 { 

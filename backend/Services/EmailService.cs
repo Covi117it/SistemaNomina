@@ -13,6 +13,13 @@ namespace backend.Services
 {
     public class EmailService : IEmailService
     {
+        private readonly IHttpClientFactory _httpClientFactory;
+
+        public EmailService(IHttpClientFactory httpClientFactory)
+        {
+            _httpClientFactory = httpClientFactory;
+        }
+
         public async Task<EmailSendResultDto> EnviarVolanteIndividualAsync(EmailTaskDto task, string conceptoPeriodo,
         SmtpSettings settings)
         {
@@ -127,7 +134,7 @@ namespace backend.Services
 
         private async Task<EmailSendResultDto> EnviarViaBrevoApiAsync(EmailTaskDto task, string conceptoPeriodo, SmtpSettings settings)
         {
-            using var httpClient = new HttpClient();
+            var httpClient = _httpClientFactory.CreateClient();
             httpClient.DefaultRequestHeaders.Add("api-key", settings.Password.Trim());
             httpClient.DefaultRequestHeaders.Add("accept", "application/json");
 

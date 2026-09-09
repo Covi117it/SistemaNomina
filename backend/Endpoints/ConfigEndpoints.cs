@@ -70,7 +70,7 @@ namespace backend.Endpoints
             group.MapGet("/periodos-disponibles", async (AppDbContext db) =>
             {
                 var aniosRegistrados = await db.NominaPeriodos
-                    .Select(p => p.FechaProcesado.Year)
+                    .Select(p => p.Anio)
                     .Distinct()
                     .ToListAsync();
 

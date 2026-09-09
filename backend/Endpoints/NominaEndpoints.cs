@@ -27,9 +27,9 @@ namespace backend.Endpoints
             .DisableAntiforgery();
 
             // Procesar y registrar quincena
-            group.MapPost("/procesar-quincena", async (List<NominaItemDto> itemsNomina, int? mes, string? quincena, string? concepto, ProcesarQuincenaCommandHandler handler, AppDbContext db, HttpContext httpContext) =>
+            group.MapPost("/procesar-quincena", async (List<NominaItemDto> itemsNomina, int? anio, int? mes, string? quincena, string? concepto, ProcesarQuincenaCommandHandler handler, AppDbContext db, HttpContext httpContext) =>
             {
-                var resultado = await handler.HandleAsync(new ProcesarQuincenaCommand(itemsNomina, mes, quincena, concepto));
+                var resultado = await handler.HandleAsync(new ProcesarQuincenaCommand(itemsNomina, mes, quincena, concepto, anio));
                 var currentUser = httpContext.Items["CurrentUser"] as Usuario;
                 if (currentUser != null)
                 {

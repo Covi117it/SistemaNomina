@@ -9,6 +9,8 @@ namespace backend.Models
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public int Id { get; set; }
     [Required]
+    public int Anio { get; set; }
+    [Required]
     public int Mes { get; set; }
     [Required]
     [StringLength(5)]
