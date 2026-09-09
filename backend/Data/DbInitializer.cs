@@ -12,6 +12,16 @@ namespace backend.Data
             try
             {
                 await context.Database.MigrateAsync();
+
+                var periodosSinAnio = await context.NominaPeriodos.Where(p => p.Anio <= 0).ToListAsync();
+                if (periodosSinAnio.Count > 0)
+                {
+                    foreach (var p in periodosSinAnio)
+                    {
+                        p.Anio = p.FechaProcesado.Year >= 2000 ? p.FechaProcesado.Year : DateTime.UtcNow.Year;
+                    }
+                    await context.SaveChangesAsync();
+                }
             }
             catch
             {
