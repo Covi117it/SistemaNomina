@@ -137,7 +137,7 @@ namespace backend.Endpoints
                     );
                 }
 
-                return Results.File(pdfBytes, "application/pdf", $"Volante_{item.CodigoEmpleado}.pdf");
+                return Results.File(pdfBytes, "application/pdf");
             })
             .RequirePermission(Permissions.VolantesSend)
             .WithSummary("Generar el PDF del volante de pago quincenal para un empleado.")
