@@ -66,9 +66,9 @@ export const PDFPaystubModal: React.FC<PDFPaystubModalProps> = ({
 
   const handlePrint = () => {
     if (!pdfUrl) return;
-    const iframe = document.getElementById('pdf-preview-iframe') as HTMLIFrameElement;
-    if (iframe && iframe.contentWindow) {
-      iframe.contentWindow.print();
+    const printWindow = window.open(pdfUrl, '_blank');
+    if (printWindow) {
+      printWindow.focus();
     }
   };
 
@@ -133,12 +133,23 @@ export const PDFPaystubModal: React.FC<PDFPaystubModalProps> = ({
               {error}
             </div>
           ) : pdfUrl ? (
-            <iframe
-              id="pdf-preview-iframe"
-              src={pdfUrl}
+            <object
+              id="pdf-preview-object"
+              data={`${pdfUrl}#toolbar=1&view=FitH`}
+              type="application/pdf"
               className="w-full h-[550px] rounded-xl border border-slate-200 shadow-md bg-white"
-              title="Vista Previa Volante PDF"
-            />
+            >
+              <div className="flex flex-col items-center justify-center h-full p-6 text-center text-slate-500">
+                <FileText className="w-12 h-12 text-slate-400 mb-2" />
+                <p className="text-sm font-medium">El navegador no permite la vista previa incrustada de PDFs.</p>
+                <button
+                  onClick={handleDownload}
+                  className="mt-3 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-semibold rounded-xl"
+                >
+                  Descargar Comprobante PDF
+                </button>
+              </div>
+            </object>
           ) : null}
         </div>
       </div>
