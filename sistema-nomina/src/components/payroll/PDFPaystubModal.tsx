@@ -1,8 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { X, Download, FileText, Loader2, Printer } from 'lucide-react';
+import {
+  X,
+  Download,
+  FileText,
+  Loader2,
+  Printer,
+  ZoomIn,
+  ZoomOut,
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-react';
 import { NominaItem } from '../../types/nomina';
 import { ENDPOINTS } from '../../config/api';
+import * as pdfjsLib from 'pdfjs-dist';
+import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
 interface PDFPaystubModalProps {
   isOpen: boolean;
@@ -20,6 +34,11 @@ export const PDFPaystubModal: React.FC<PDFPaystubModalProps> = ({
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [pdfDoc, setPdfDoc] = useState<pdfjsLib.PDFDocumentProxy | null>(null);
+  const [pageNum, setPageNum] = useState<number>(1);
+  const [numPages, setNumPages] = useState<number>(1);
+  const [scale, setScale] = useState<number>(1.2);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
     if (isOpen && item) {
@@ -29,6 +48,7 @@ export const PDFPaystubModal: React.FC<PDFPaystubModalProps> = ({
         URL.revokeObjectURL(pdfUrl);
         setPdfUrl(null);
       }
+      setPdfDoc(null);
     }
   }, [isOpen, item]);
 
@@ -39,7 +59,7 @@ export const PDFPaystubModal: React.FC<PDFPaystubModalProps> = ({
 
     try {
       const response = await axios.post(
-        `${ENDPOINTS.NOMINA}/generar-volante-pdf?conceptoPeriodo=${encodeURIComponent(conceptoPeriodo)}`, 
+        `${ENDPOINTS.NOMINA}/generar-volante-pdf?conceptoPeriodo=${encodeURIComponent(conceptoPeriodo)}`,
         item,
         { responseType: 'blob' }
       );
@@ -47,12 +67,49 @@ export const PDFPaystubModal: React.FC<PDFPaystubModalProps> = ({
       const blob = new Blob([response.data], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
       setPdfUrl(url);
+
+      const arrayBuffer = await blob.arrayBuffer();
+      const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+      const doc = await loadingTask.promise;
+      setPdfDoc(doc);
+      setNumPages(doc.numPages);
+      setPageNum(1);
     } catch (err) {
       setError('No se pudo generar la vista previa del comprobante PDF.');
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!pdfDoc || !canvasRef.current) return;
+    let renderTask: any = null;
+
+    pdfDoc.getPage(pageNum).then((page) => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const context = canvas.getContext('2d');
+      if (!context) return;
+
+      const viewport = page.getViewport({ scale });
+      canvas.height = viewport.height;
+      canvas.width = viewport.width;
+
+      const renderContext = {
+        canvasContext: context,
+        viewport: viewport,
+        canvas: canvas,
+      };
+
+      renderTask = page.render(renderContext);
+    });
+
+    return () => {
+      if (renderTask) {
+        renderTask.cancel();
+      }
+    };
+  }, [pdfDoc, pageNum, scale]);
 
   const handleDownload = () => {
     if (!pdfUrl || !item) return;
@@ -121,36 +178,67 @@ export const PDFPaystubModal: React.FC<PDFPaystubModalProps> = ({
           </div>
         </div>
 
-        {/* Cuerpo del Modal: Visor PDF */}
-        <div className="flex-1 p-6 bg-slate-100 flex items-center justify-center min-h-[500px]">
+        {/* Barra de Controles de Vista Previa */}
+        {pdfDoc && (
+          <div className="flex items-center justify-between px-6 py-2 bg-slate-50 border-b border-slate-200 text-xs text-slate-600">
+            <div className="flex items-center gap-2">
+              <button
+                disabled={pageNum <= 1}
+                onClick={() => setPageNum((p) => Math.max(1, p - 1))}
+                className="p-1 rounded hover:bg-slate-200 disabled:opacity-30 cursor-pointer"
+                title="Página anterior"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <span>
+                Página {pageNum} de {numPages}
+              </span>
+              <button
+                disabled={pageNum >= numPages}
+                onClick={() => setPageNum((p) => Math.min(numPages, p + 1))}
+                className="p-1 rounded hover:bg-slate-200 disabled:opacity-30 cursor-pointer"
+                title="Página siguiente"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setScale((s) => Math.max(0.6, s - 0.2))}
+                className="p-1 rounded hover:bg-slate-200 cursor-pointer"
+                title="Alejar"
+              >
+                <ZoomOut className="w-4 h-4" />
+              </button>
+              <span>{Math.round(scale * 100)}%</span>
+              <button
+                onClick={() => setScale((s) => Math.min(2.5, s + 0.2))}
+                className="p-1 rounded hover:bg-slate-200 cursor-pointer"
+                title="Acercar"
+              >
+                <ZoomIn className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Contenedor del Canvas PDF */}
+        <div className="flex-1 p-4 bg-slate-200/70 overflow-auto flex items-center justify-center min-h-[500px] max-h-[70vh]">
           {loading ? (
             <div className="flex flex-col items-center gap-3 text-slate-500">
               <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
-              <p className="text-sm font-medium">Generando vista previa del volante...</p>
+              <p className="text-sm font-medium">
+                Generando vista previa del volante...
+              </p>
             </div>
           ) : error ? (
-            <div className="text-center text-rose-600 font-semibold p-4">
+            <div className="text-center text-rose-600 font-semibold p-4 bg-white rounded-xl shadow-sm">
               {error}
             </div>
-          ) : pdfUrl ? (
-            <object
-              id="pdf-preview-object"
-              data={`${pdfUrl}#toolbar=1&view=FitH`}
-              type="application/pdf"
-              className="w-full h-[550px] rounded-xl border border-slate-200 shadow-md bg-white"
-            >
-              <div className="flex flex-col items-center justify-center h-full p-6 text-center text-slate-500">
-                <FileText className="w-12 h-12 text-slate-400 mb-2" />
-                <p className="text-sm font-medium">El navegador no permite la vista previa incrustada de PDFs.</p>
-                <button
-                  onClick={handleDownload}
-                  className="mt-3 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-semibold rounded-xl"
-                >
-                  Descargar Comprobante PDF
-                </button>
-              </div>
-            </object>
-          ) : null}
+          ) : (
+            <canvas ref={canvasRef} className="shadow-lg rounded-lg bg-white" />
+          )}
         </div>
       </div>
     </div>
