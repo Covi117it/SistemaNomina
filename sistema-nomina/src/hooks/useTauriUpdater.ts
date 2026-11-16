@@ -5,6 +5,11 @@ import { invoke } from '@tauri-apps/api/core';
 
 export function useTauriUpdater() {
   useEffect(() => {
+    // En entorno de desarrollo (Vite dev / tauri dev), omitir comprobación y descarga automática de versiones de producción
+    if (import.meta.env.DEV) {
+      return;
+    }
+
     async function checkForUpdates() {
       try {
         const update = await check();
