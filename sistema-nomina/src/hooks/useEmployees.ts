@@ -5,7 +5,7 @@ import { employeeApi } from '../service/api/employeeApi';
 
 export const useEmployees = () => {
   const [dbEmployees, setDbEmployees] = useState<Empleado[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<'TODOS' | 'ACTIVO' | 'INACTIVO'>('TODOS');
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
@@ -60,13 +60,14 @@ export const useEmployees = () => {
       setTotalInactivos(inact);
       setTotalFiltrados(filt);
       setTotalPages(pages);
+      setLoading(false);
     } catch (err) {
       console.error('Error cargando empleados:', err);
       if (retries > 0) {
         setTimeout(() => fetchDbEmployees(retries - 1), 1500);
+      } else {
+        setLoading(false);
       }
-    } finally {
-      setLoading(false);
     }
   };
 

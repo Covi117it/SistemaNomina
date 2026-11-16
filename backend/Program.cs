@@ -115,12 +115,41 @@ app.Use(async (context, next) =>
     await next();
 });
 
-app.MapGet("/api/health", () => Results.Ok(new 
-{ 
-    Status = "Online", 
-    Message = "Backend .NET 10 funcionando correctamente", 
-    Timestamp = DateTime.Now 
-})).WithName("GetHealthCheck");
+app.MapGet("/api/health", async (AppDbContext dbContext) => 
+{
+    try
+    {
+        bool canConnect = await dbContext.Database.CanConnectAsync();
+        if (!canConnect)
+        {
+            return Results.Json(new 
+            { 
+                Status = "Starting", 
+                Database = "Disconnected",
+                Message = "El backend está activo, pero la base de datos aún no está disponible.",
+                Timestamp = DateTime.Now 
+            }, statusCode: StatusCodes.Status503ServiceUnavailable);
+        }
+
+        return Results.Ok(new 
+        { 
+            Status = "Online", 
+            Database = "Connected",
+            Message = "Backend y Base de Datos MariaDB funcionando correctamente", 
+            Timestamp = DateTime.Now 
+        });
+    }
+    catch (Exception ex)
+    {
+        return Results.Json(new 
+        { 
+            Status = "Starting", 
+            Database = "Connecting",
+            Message = $"Conectando a la base de datos: {ex.Message}", 
+            Timestamp = DateTime.Now 
+        }, statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
+}).WithName("GetHealthCheck");
 
 // Registro de endpoints
 app.MapEmpleadosEndPoints();

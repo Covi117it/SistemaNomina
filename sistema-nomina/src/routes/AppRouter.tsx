@@ -4,6 +4,7 @@ import { useEmployees } from '../hooks/useEmployees';
 import { usePayrollStaging } from '../hooks/usePayrollStaging';
 import { employeeApi } from '../service/api/employeeApi';
 import { Toast } from '../components/Toast';
+import { AppCloseButton } from '../components/common/AppCloseButton';
 import { Loader2 } from 'lucide-react';
 import { useAuthorization } from '../hooks/useAuthorization';
 
@@ -118,6 +119,8 @@ export const AppRouter: React.FC = () => {
 
   return (
     <div className={`min-h-screen text-slate-900 font-sans antialiased ${currentView === 'login' ? '' : 'bg-[#f4f7f4] p-4 md:p-8'}`}>
+      <AppCloseButton />
+
       {notification && (
         <Toast
           message={notification.message}

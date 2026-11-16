@@ -24,7 +24,7 @@ export const Toast: React.FC<ToastProps> = ({
 
   return (
     <div
-      className={`fixed top-6 right-6 z-50 px-5 py-3.5 rounded-2xl shadow-xl border text-sm font-medium flex items-center gap-3 animate-in fade-in slide-in-from-top-4 transition-all ${
+      className={`fixed top-16 right-6 z-50 px-5 py-3.5 rounded-2xl shadow-xl border text-sm font-medium flex items-center gap-3 animate-in fade-in slide-in-from-top-4 transition-all ${
         type === 'success'
           ? 'bg-emerald-50 border-emerald-200 text-emerald-900 shadow-emerald-500/10'
           : 'bg-rose-50 border-rose-200 text-rose-900 shadow-rose-500/10'
