@@ -88,7 +88,10 @@ namespace backend.Application.Features.Nomina.Commands
                 await _db.NominaPeriodos.AddAsync(nuevoPeriodo);
                 await _db.SaveChangesAsync();
 
-                var listaEmpleados = await _db.Empleados.AsNoTracking().ToListAsync();
+                var listaEmpleados = await _db.Empleados
+                    .AsNoTracking()
+                    .Where(e => codigosUnicos.Contains(e.Codigo))
+                    .ToListAsync();
                 var empMap = listaEmpleados.ToDictionary(e => e.Codigo.Trim(), StringComparer.OrdinalIgnoreCase);
 
                 foreach (var item in command.ItemsNomina)

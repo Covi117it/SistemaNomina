@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
 import { Empleado } from '../types/empleado';
 import { employeeApi } from '../service/api/employeeApi';
+import { useDebounce } from './useDebounce';
 
 export const useEmployees = () => {
   const [dbEmployees, setDbEmployees] = useState<Empleado[]>([]);
@@ -27,10 +28,18 @@ export const useEmployees = () => {
   const [totalInactivos, setTotalInactivos] = useState<number>(0);
   const [totalFiltrados, setTotalFiltrados] = useState<number>(0);
 
-  const fetchDbEmployees = async (retries = 3) => {
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
+
+  const fetchDbEmployees = async (
+    retries = 3,
+    term = debouncedSearchTerm,
+    status = statusFilter,
+    page = currentPage,
+    size = pageSize
+  ) => {
     setLoading(true);
     try {
-      const data = await employeeApi.fetchEmployees(searchTerm, statusFilter, currentPage, pageSize);
+      const data = await employeeApi.fetchEmployees(term, status, page, size);
       let list: Empleado[] = [];
       let tot = 0;
       let act = 0;
@@ -44,14 +53,14 @@ export const useEmployees = () => {
         inact = list.filter((e) => e.eStatus === 'INACTIVO').length;
         tot = act + inact;
         filt = list.length;
-        pages = Math.ceil(filt / pageSize) || 1;
+        pages = Math.ceil(filt / size) || 1;
       } else if (data && typeof data === 'object') {
         list = data.empleados || [];
         act = data.totalActivos ?? 0;
         inact = data.totalInactivos ?? 0;
         tot = data.totalTotal ?? (act + inact);
         filt = data.totalFiltrados ?? list.length;
-        pages = data.totalPages ?? (Math.ceil(filt / pageSize) || 1);
+        pages = data.totalPages ?? (Math.ceil(filt / size) || 1);
       }
 
       setDbEmployees(list);
@@ -64,21 +73,24 @@ export const useEmployees = () => {
     } catch (err) {
       console.error('Error cargando empleados:', err);
       if (retries > 0) {
-        setTimeout(() => fetchDbEmployees(retries - 1), 1500);
+        setTimeout(() => fetchDbEmployees(retries - 1, term, status, page, size), 1500);
       } else {
         setLoading(false);
       }
     }
   };
 
+  // Resetear a página 1 cuando cambia el término o filtro
   useEffect(() => {
-    fetchDbEmployees();
-  }, [searchTerm, statusFilter, currentPage, pageSize]);
+    if (currentPage !== 1) {
+      setCurrentPage(1);
+    }
+  }, [debouncedSearchTerm, statusFilter]);
 
-  // Al cambiar filtros o búsquedas, volver a la página 1
+  // Cargar datos debounced
   useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, statusFilter]);
+    fetchDbEmployees(3, debouncedSearchTerm, statusFilter, currentPage, pageSize);
+  }, [debouncedSearchTerm, statusFilter, currentPage, pageSize]);
 
   const handleSaveModalEmpleado = async (empleado: Empleado, isEdit: boolean = false) => {
     try {

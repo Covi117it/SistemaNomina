@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { DashboardHeader } from '../components/dashboard/DashboardHeader';
 import { ModuleNavigationGrid } from '../components/dashboard/ModuleNavigationGrid';
 import { SystemStatisticsPanel } from '../components/dashboard/SystemStatisticsPanel';
 import { PayrollCalendarWidget } from '../components/dashboard/PayrollCalendarWidget';
 import { MonthEventsWidget, PayrollEvent } from '../components/dashboard/MonthEventsWidget';
-import { payrollApi } from '../service/api/payrollApi';
 import { useAuthorization } from '../hooks/useAuthorization';
 
 interface DashboardPageProps {
@@ -39,30 +38,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   const [monthEvents, setMonthEvents] = useState<PayrollEvent[]>([]);
   const { canManageEvents } = useAuthorization();
 
-  // Cargar dinámicamente los eventos del MES ACTUAL desde MariaDB y backend
-  useEffect(() => {
-    const today = new Date();
-    payrollApi.fetchCalendarEvents(today.getFullYear(), today.getMonth() + 1)
-      .then((res) => {
-        if (res && res.eventos) {
-          const mapped = res.eventos.map((e: any) => ({
-            id: e.id,
-            day: e.day,
-            time: e.time,
-            startTime: e.startTime,
-            title: e.title,
-            subtitle: e.subtitle,
-            description: e.description,
-            badge: e.badge,
-            eventType: e.eventType,
-            dateStr: e.dateStr,
-          }));
-          setMonthEvents(mapped);
-        }
-      })
-      .catch((err) => console.warn('Error al cargar eventos del mes en Dashboard:', err));
-  }, []);
-
+  // Los eventos se cargan a través del widget de calendario para evitar peticiones duplicadas
   const handleEventsLoaded = (loadedEvents: PayrollEvent[], loadedMonth?: number) => {
     const currentMonth = new Date().getMonth() + 1;
     if (loadedEvents && (!loadedMonth || loadedMonth === currentMonth)) {

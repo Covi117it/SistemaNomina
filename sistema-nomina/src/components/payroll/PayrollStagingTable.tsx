@@ -1,12 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { PreviewNominaResponse, NominaItem } from '../../types/nomina';
 import { AlertTriangle, DollarSign, ArrowUpRight, ArrowDownRight, ShieldCheck, UserX } from 'lucide-react';
-import { PDFPaystubModal } from './PDFPaystubModal';
 import { StatCard } from '../common/StatCard';
 import { StagingToolbar } from './StagingToolbar';
 import { StagingTableRows } from './StagingTableRows';
 import { Pagination } from '../common/Pagination';
 import { formatCurrency } from '../../utils/formatters';
+
+const PDFPaystubModal = lazy(() =>
+  import('./PDFPaystubModal').then((m) => ({ default: m.PDFPaystubModal }))
+);
 
 interface PayrollStagingTableProps {
   previewData: PreviewNominaResponse;
@@ -152,11 +155,15 @@ export const PayrollStagingTable: React.FC<PayrollStagingTableProps> = ({
         />
       </div>
 
-      <PDFPaystubModal
-        isOpen={!!selectedPdfItem}
-        item={selectedPdfItem}
-        onClose={() => setSelectedPdfItem(null)}
-      />
+      {selectedPdfItem && (
+        <Suspense fallback={null}>
+          <PDFPaystubModal
+            isOpen={!!selectedPdfItem}
+            item={selectedPdfItem}
+            onClose={() => setSelectedPdfItem(null)}
+          />
+        </Suspense>
+      )}
     </div>
   );
 };

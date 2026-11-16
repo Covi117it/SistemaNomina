@@ -112,7 +112,7 @@ export const ModuleNavigationGrid: React.FC<ModuleNavigationGridProps> = ({
             <div 
               key={idx}
               onClick={mod.onClick}
-              className="group bg-white hover:bg-slate-50/50 border border-slate-200/80 hover:border-emerald-300 rounded-[28px] p-6 shadow-xs hover:shadow-md transition-all duration-300 cursor-pointer flex flex-col justify-between"
+              className="group bg-white hover:bg-emerald-50/15 border border-slate-200/80 hover:border-emerald-400 rounded-[28px] p-6 shadow-xs transform-gpu transition-all duration-150 ease-out hover:-translate-y-1 cursor-pointer flex flex-col justify-between"
             >
               <div>
                 <div className="flex items-center justify-between mb-4">

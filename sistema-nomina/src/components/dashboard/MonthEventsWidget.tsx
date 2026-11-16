@@ -101,7 +101,7 @@ export const MonthEventsWidget: React.FC<MonthEventsWidgetProps> = ({
   };
 
   return (
-    <div className="bg-white border border-slate-200/80 rounded-[28px] p-6 shadow-xs space-y-4 transition-all duration-300 select-none">
+    <div className="bg-white border border-slate-200/80 rounded-[28px] p-6 shadow-xs space-y-4 select-none">
       {/* Cabecera del Desplegable */}
       <div 
         onClick={() => setIsEventsExpanded(!isEventsExpanded)}
@@ -168,7 +168,7 @@ export const MonthEventsWidget: React.FC<MonthEventsWidgetProps> = ({
                 <div
                   key={evt.id || `event-${idx}`}
                   onClick={() => handleCardClick(evt)}
-                  className="p-4 rounded-2xl border border-slate-200/80 bg-slate-50/40 hover:bg-white hover:border-emerald-500/40 hover:shadow-md transition-all duration-200 cursor-pointer group flex flex-col justify-between space-y-3"
+                  className="p-4 rounded-2xl border border-slate-200/80 bg-slate-50/40 hover:bg-white hover:border-emerald-500/40 shadow-2xs transform-gpu transition-all duration-150 ease-out hover:-translate-y-0.5 cursor-pointer group flex flex-col justify-between space-y-3"
                 >
                   {/* Fila Superior: Día, Hora e Insignia */}
                   <div className="flex items-center justify-between">

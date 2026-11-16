@@ -29,6 +29,7 @@ builder.Services.AddScoped<IExcelExportService, ExcelExportService>();
 builder.Services.AddScoped<IPdfService, PdfService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IEmpleadoService, EmpleadoService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IMariaDbBackupService, MariaDbBackupService>();
 builder.Services.AddDataProtection();
 builder.Services.AddSingleton<ICryptoService, CryptoService>();
@@ -43,6 +44,11 @@ builder.Services.AddScoped<EnviarVolantesCommandHandler>();
 builder.Services.AddScoped<ObtenerExportacionNominaQueryHandler>();
 builder.Services.AddScoped<ObtenerExportacionEmpleadosQueryHandler>();
 builder.Services.AddHttpClient();
+builder.Services.AddMemoryCache();
+builder.Services.AddResponseCompression(options =>
+{
+    options.EnableForHttps = true;
+});
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -102,6 +108,7 @@ if (app.Environment.IsDevelopment())
     });
 }
 
+app.UseResponseCompression();
 app.UseCors("AllowTauriApp");
 app.UseRateLimiter();
 
@@ -156,6 +163,7 @@ app.MapEmpleadosEndPoints();
 app.MapNominaEndpoints(); 
 app.MapConfigEndpoints();
 app.MapAuthEndpoints();
+app.MapUsuariosEndpoints();
 
 // Inicialización de la base de datos
 using (var scope = app.Services.CreateScope())

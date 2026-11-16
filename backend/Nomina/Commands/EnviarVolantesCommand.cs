@@ -73,6 +73,16 @@ namespace backend.Application.Features.Nomina.Commands
             int exitosos = resultados.Count(r => r.Exitoso);
             int fallidos = resultados.Count(r => !r.Exitoso);
 
+            if (fallidos > 0)
+            {
+                var fallosDetalle = string.Join("; ", resultados.Where(r => !r.Exitoso).Select(r => $"{r.Email}: {r.MensajeError}"));
+                Console.WriteLine($"[EnviarVolantesCommandHandler] {fallidos} envíos fallidos: {fallosDetalle}");
+            }
+            else
+            {
+                Console.WriteLine($"[EnviarVolantesCommandHandler] Todos los correos ({exitosos}) enviados correctamente.");
+            }
+
             if (exitosos > 0)
             {
                 var hoy = DateTime.Now;

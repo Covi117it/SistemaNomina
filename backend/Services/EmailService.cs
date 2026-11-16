@@ -23,40 +23,34 @@ namespace backend.Services
         public async Task<EmailSendResultDto> EnviarVolanteIndividualAsync(EmailTaskDto task, string conceptoPeriodo,
         SmtpSettings settings)
         {
+            Console.WriteLine($"[EmailService] Iniciando envío para {task.NombreEmpleado} ({task.EmailDestinatario})...");
+            Console.WriteLine($"[EmailService] Config: Servidor={settings.Server}, Puerto={settings.Port}, SenderEmail={settings.SenderEmail}, SenderName={settings.SenderName}, SSL={settings.EnableSsl}, PassLen={settings.Password?.Length ?? 0}");
+
             try
             {
                 if (!string.IsNullOrWhiteSpace(settings.Password) && settings.Password.Trim().StartsWith("xkeysib-"))
                 {
+                    Console.WriteLine("[EmailService] Detectada API Key de Brevo (xkeysib-). Enviando vía Brevo API...");
                     return await EnviarViaBrevoApiAsync(task, conceptoPeriodo, settings);
                 }
 
+                var senderDisplayName = string.IsNullOrWhiteSpace(settings.SenderName) || settings.SenderName.Contains("Institucional")
+                    ? "Enfoco Nómina"
+                    : settings.SenderName;
+
                 var message = new MimeMessage();
-                message.From.Add(new MailboxAddress(settings.SenderName, settings.SenderEmail));
+                message.From.Add(new MailboxAddress(senderDisplayName, settings.SenderEmail));
                 message.To.Add(new MailboxAddress(task.NombreEmpleado, task.EmailDestinatario));
 
-                message.Subject = $"Comprobante de pago - {conceptoPeriodo} - ENFOCO NOMINA";
+                message.Subject = $"Comprobante de pago - {conceptoPeriodo} - ENFOCO NÓMINA";
 
                 var bodyBuilder = new BodyBuilder
                 {
                     HtmlBody = $@"
-                         <div style='font-family: Arial, sans-serif; color: #1e293b; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; background-color: #ffffff;'>
+                         <div style='font-family: ""Roboto"", -apple-system, BlinkMacSystemFont, ""Segoe UI"", Arial, sans-serif; color: #1e293b; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px 24px 20px 24px; background-color: #ffffff;'>
                             <div style='text-align: center; border-bottom: 2px solid #10b981; padding-bottom: 16px;'>
-                                <h2 style='color: #0f172a; margin: 0; font-size: 22px;'>ENFOCO NÓMINA</h2>
+                                <h2 style='color: #0f172a; margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.3px;'>ENFOCO NÓMINA</h2>
                                 <p style='color: #64748b; font-size: 14px; margin: 4px 0 0 0;'>Comprobante Oficial de Pago Quincenal</p>
-                            </div>
-                            <div style='padding: 20px 0;'>
-                                <p style='font-size: 15px;'>Estimado/a <strong>{task.NombreEmpleado}</strong>,</p>
-                                <p style='font-size: 14px; color: #334155;'>Adjunto a este correo encontrará su volante de pago correspondiente a la <strong>{conceptoPeriodo}</strong> en formato PDF.</p>
-                                
-                                <div style='background-color: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 16px; margin: 18px 0;'>
-                                    <p style='margin: 0 0 6px 0; font-size: 12px; font-weight: bold; text-transform: uppercase; color: #64748b;'>Resumen de Pago:</p>
-                                    <p style='margin: 0; font-size: 18px; font-weight: bold; color: #059669;'>Neto Recibido: DOP$ {task.NetoPagado:N2}</p>
-                                </div>
-                                
-                                <p style='font-size: 13px; color: #64748b; margin-top: 16px;'>Si tiene alguna inquietud respecto a sus devengados o deducciones, favor comunicarse con el departamento de Gestión Humana.</p>
-                            </div>
-                            <div style='border-top: 1px solid #e2e8f0; padding-top: 14px; font-size: 11px; color: #94a3b8; text-align: center;'>
-                                Mensaje generado automáticamente por el Sistema de Nómina ENFOCO. No responda a este correo.
                             </div>
                         </div>
                     "
@@ -93,6 +87,8 @@ namespace backend.Services
                 await client.SendAsync(message);
                 await client.DisconnectAsync(true);
 
+                Console.WriteLine($"[EmailService] ¡ÉXITO! Correo enviado a {task.EmailDestinatario}");
+
                 return new EmailSendResultDto
                 {
                     CodigoEmpleado = task.CodigoEmpleado,
@@ -103,6 +99,12 @@ namespace backend.Services
 
             catch (Exception ex)
             {
+                Console.WriteLine($"[EmailService ERROR] Falló el envío a {task.EmailDestinatario}: {ex.GetType().Name} - {ex.Message}");
+                if (ex.InnerException != null)
+                {
+                    Console.WriteLine($"[EmailService INNER ERROR] {ex.InnerException.GetType().Name} - {ex.InnerException.Message}");
+                }
+
                 return new EmailSendResultDto
                 {
                     CodigoEmpleado = task.CodigoEmpleado,
@@ -139,33 +141,23 @@ namespace backend.Services
             httpClient.DefaultRequestHeaders.Add("accept", "application/json");
 
             var htmlContent = $@"
-                 <div style='font-family: Arial, sans-serif; color: #1e293b; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; background-color: #ffffff;'>
+                 <div style='font-family: ""Roboto"", -apple-system, BlinkMacSystemFont, ""Segoe UI"", Arial, sans-serif; color: #1e293b; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px 24px 20px 24px; background-color: #ffffff;'>
                     <div style='text-align: center; border-bottom: 2px solid #10b981; padding-bottom: 16px;'>
-                        <h2 style='color: #0f172a; margin: 0; font-size: 22px;'>ENFOCO NÓMINA</h2>
+                        <h2 style='color: #0f172a; margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.3px;'>ENFOCO NÓMINA</h2>
                         <p style='color: #64748b; font-size: 14px; margin: 4px 0 0 0;'>Comprobante Oficial de Pago Quincenal</p>
-                    </div>
-                    <div style='padding: 20px 0;'>
-                        <p style='font-size: 15px;'>Estimado/a <strong>{task.NombreEmpleado}</strong>,</p>
-                        <p style='font-size: 14px; color: #334155;'>Adjunto a este correo encontrará su volante de pago correspondiente a la <strong>{conceptoPeriodo}</strong> en formato PDF.</p>
-                        
-                        <div style='background-color: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 16px; margin: 18px 0;'>
-                            <p style='margin: 0 0 6px 0; font-size: 12px; font-weight: bold; text-transform: uppercase; color: #64748b;'>Resumen de Pago:</p>
-                            <p style='margin: 0; font-size: 18px; font-weight: bold; color: #059669;'>Neto Recibido: DOP$ {task.NetoPagado:N2}</p>
-                        </div>
-                        
-                        <p style='font-size: 13px; color: #64748b; margin-top: 16px;'>Si tiene alguna inquietud respecto a sus devengados o deducciones, favor comunicarse con el departamento de Gestión Humana.</p>
-                    </div>
-                    <div style='border-top: 1px solid #e2e8f0; padding-top: 14px; font-size: 11px; color: #94a3b8; text-align: center;'>
-                        Mensaje generado automáticamente por el Sistema de Nómina ENFOCO. No responda a este correo.
                     </div>
                 </div>
             ";
 
+            var brevoSenderName = string.IsNullOrWhiteSpace(settings.SenderName) || settings.SenderName.Contains("Institucional")
+                ? "Enfoco Nómina"
+                : settings.SenderName;
+
             var payload = new
             {
-                sender = new { name = settings.SenderName ?? "ENFOCO NÓMINA", email = settings.SenderEmail },
+                sender = new { name = brevoSenderName, email = settings.SenderEmail },
                 to = new[] { new { email = task.EmailDestinatario, name = task.NombreEmpleado } },
-                subject = $"Comprobante de pago - {conceptoPeriodo} - ENFOCO NOMINA",
+                subject = $"Comprobante de pago - {conceptoPeriodo} - ENFOCO NÓMINA",
                 htmlContent = htmlContent,
                 attachment = task.PdfBytes != null && task.PdfBytes.Length > 0 ? new[]
                 {
@@ -180,6 +172,7 @@ namespace backend.Services
             var response = await httpClient.PostAsJsonAsync("https://api.brevo.com/v3/smtp/email", payload);
             if (response.IsSuccessStatusCode)
             {
+                Console.WriteLine($"[EmailService Brevo] ¡ÉXITO! Correo enviado a {task.EmailDestinatario}");
                 return new EmailSendResultDto
                 {
                     CodigoEmpleado = task.CodigoEmpleado,
@@ -189,6 +182,7 @@ namespace backend.Services
             }
 
             var errContent = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"[EmailService Brevo ERROR] StatusCode: {response.StatusCode}, Detalle: {errContent}");
             return new EmailSendResultDto
             {
                 CodigoEmpleado = task.CodigoEmpleado,

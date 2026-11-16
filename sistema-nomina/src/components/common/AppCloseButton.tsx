@@ -47,7 +47,7 @@ export const AppCloseButton: React.FC = () => {
       disabled={isClosing}
       title="Cerrar aplicación"
       aria-label="Cerrar aplicación"
-      className="fixed top-3.5 right-4 sm:top-4 sm:right-6 z-40 group flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-white/80 hover:bg-rose-50/90 text-slate-500 hover:text-rose-600 border border-slate-200/80 hover:border-rose-200/90 backdrop-blur-md shadow-xs hover:shadow-sm transition-all duration-200 ease-out active:scale-95 cursor-pointer select-none"
+      className="fixed top-3.5 right-4 sm:top-4 sm:right-6 z-40 group flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-white/95 hover:bg-rose-50 text-slate-500 hover:text-rose-600 border border-slate-200/90 hover:border-rose-300 shadow-xs transition-colors duration-150 ease-out active:scale-95 cursor-pointer select-none"
     >
       <div className="w-5 h-5 rounded-full flex items-center justify-center bg-slate-100/80 group-hover:bg-rose-100/90 text-slate-500 group-hover:text-rose-600 transition-colors">
         <Power className="w-3 h-3 stroke-[2.5]" />

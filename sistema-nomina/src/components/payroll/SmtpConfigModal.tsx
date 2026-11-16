@@ -15,7 +15,7 @@ export const SmtpConfigModal: React.FC<SmtpConfigModalProps> = ({ isOpen, onClos
     port: 587,
     username: '',
     senderEmail: '',
-    senderName: 'Nómina Enfoco Institucional',
+    senderName: 'Enfoco Nómina',
     password: '',
     enableSsl: true,
   });
@@ -26,12 +26,14 @@ export const SmtpConfigModal: React.FC<SmtpConfigModalProps> = ({ isOpen, onClos
       axios.get(`${ENDPOINTS.CONFIG}/smtp`)
         .then((res) => {
           if (res.data) {
+            const rawSender = res.data.senderName;
+            const cleanSender = (!rawSender || rawSender.includes('Institucional')) ? 'Enfoco Nómina' : rawSender;
             setSmtpConfig({
               server: res.data.server || 'smtp.gmail.com',
               port: res.data.port || 587,
               username: res.data.username || '',
               senderEmail: res.data.senderEmail || '',
-              senderName: res.data.senderName || 'Nómina Enfoco Institucional',
+              senderName: cleanSender,
               password: res.data.password || '',
               enableSsl: res.data.enableSsl ?? true,
             });
@@ -96,6 +98,17 @@ export const SmtpConfigModal: React.FC<SmtpConfigModalProps> = ({ isOpen, onClos
               value={smtpConfig.username}
               onChange={(e) => setSmtpConfig({ ...smtpConfig, username: e.target.value })}
               className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono font-bold"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-600 mb-1">Nombre del Remitente</label>
+            <input
+              type="text"
+              placeholder="Enfoco Nómina"
+              value={smtpConfig.senderName}
+              onChange={(e) => setSmtpConfig({ ...smtpConfig, senderName: e.target.value })}
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-medium"
             />
           </div>
 

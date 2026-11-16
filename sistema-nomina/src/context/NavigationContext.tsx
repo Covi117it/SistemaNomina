@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { Empleado } from '../types/empleado';
 import { Usuario } from '../types/usuario';
 import { secureStorage } from '../service/secureStorage';
@@ -81,20 +81,20 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode; initialVi
     verificarSesionPersistente();
   }, []);
 
-  const navigateTo = (view: CurrentView, options?: Partial<NavigationState>) => {
+  const navigateTo = useCallback((view: CurrentView, options?: Partial<NavigationState>) => {
     if (options?.currentUser !== undefined) setCurrentUser(options.currentUser);
     if (options?.selectedEmpleado !== undefined) setSelectedEmpleado(options.selectedEmpleado);
     if (options?.selectedUsuario !== undefined) setSelectedUsuario(options.selectedUsuario);
     if (options?.selectedEventDate !== undefined) setSelectedEventDate(options.selectedEventDate);
     if (options?.nextSuggestedCode !== undefined) setNextSuggestedCode(options.nextSuggestedCode);
     setCurrentView(view);
-  };
+  }, []);
 
-  const goBack = (fallbackView: CurrentView = 'dashboard') => {
+  const goBack = useCallback((fallbackView: CurrentView = 'dashboard') => {
     setCurrentView(fallbackView);
-  };
+  }, []);
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     try {
       const token = await secureStorage.obtenerToken();
       await authApi.cerrarSesion(token || undefined);
@@ -106,7 +106,38 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode; initialVi
       setCurrentUser(null);
       setCurrentView('login');
     }
-  };
+  }, []);
+
+  const contextValue = useMemo<NavigationContextType>(
+    () => ({
+      currentView,
+      currentUser,
+      selectedEmpleado,
+      selectedUsuario,
+      selectedEventDate,
+      nextSuggestedCode,
+      setCurrentView,
+      setCurrentUser,
+      setSelectedEmpleado,
+      setSelectedUsuario,
+      setSelectedEventDate,
+      setNextSuggestedCode,
+      navigateTo,
+      goBack,
+      logout,
+    }),
+    [
+      currentView,
+      currentUser,
+      selectedEmpleado,
+      selectedUsuario,
+      selectedEventDate,
+      nextSuggestedCode,
+      navigateTo,
+      goBack,
+      logout,
+    ]
+  );
 
   // Pantalla de carga suave mientras valida las credenciales en el Keyring
   if (isCheckingAuth) {
@@ -119,25 +150,7 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode; initialVi
   }
 
   return (
-    <NavigationContext.Provider
-      value={{
-        currentView,
-        currentUser,
-        selectedEmpleado,
-        selectedUsuario,
-        selectedEventDate,
-        nextSuggestedCode,
-        setCurrentView,
-        setCurrentUser,
-        setSelectedEmpleado,
-        setSelectedUsuario,
-        setSelectedEventDate,
-        setNextSuggestedCode,
-        navigateTo,
-        goBack,
-        logout,
-      }}
-    >
+    <NavigationContext.Provider value={contextValue}>
       {children}
     </NavigationContext.Provider>
   );

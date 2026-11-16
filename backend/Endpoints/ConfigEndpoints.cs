@@ -52,7 +52,9 @@ namespace backend.Endpoints
 
                 config.SmtpServer = string.IsNullOrWhiteSpace(dto.Server) ? "smtp.gmail.com" : dto.Server.Trim();
                 config.SmtpPort = dto.Port > 0 ? dto.Port : 587;
-                config.SmtpSenderName = string.IsNullOrWhiteSpace(dto.SenderName) ? "Nómina Enfoco Institucional" : dto.SenderName.Trim();
+                config.SmtpSenderName = string.IsNullOrWhiteSpace(dto.SenderName) || dto.SenderName.Contains("Institucional")
+                    ? "Enfoco Nómina" 
+                    : dto.SenderName.Trim();
                 config.SmtpSenderEmail = dto.SenderEmail?.Trim() ?? "";
                 config.SmtpUsername = string.IsNullOrWhiteSpace(dto.Username) ? (dto.SenderEmail?.Trim() ?? "") : dto.Username.Trim();
                 

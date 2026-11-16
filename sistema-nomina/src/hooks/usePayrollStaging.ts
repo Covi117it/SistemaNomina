@@ -36,7 +36,7 @@ export const usePayrollStaging = (onSuccessCallback?: () => void) => {
     }
   };
 
-  const handleUpdatePayrollItem = async (index: number, field: keyof NominaItem, value: any) => {
+  const handleUpdatePayrollItem = (index: number, field: keyof NominaItem, value: any) => {
     if (!previewNominaData) return;
 
     const updatedItems = [...previewNominaData.items];
@@ -53,21 +53,29 @@ export const usePayrollStaging = (onSuccessCallback?: () => void) => {
       curItem.sueldoBase = Math.max(0, nuevoDevengado - devengadoExtras);
     }
 
+    const devengado = (curItem.sueldoBase || 0) + (curItem.incentivo || 0) + (curItem.reembolso || 0) + (curItem.horasExtras || 0);
+    const deducciones = (curItem.prestamo || 0) + (curItem.cuotaCumpleanos || 0) + (curItem.seguroVehiculo || 0) + (curItem.seguroMedico || 0) + (curItem.sfs || 0) + (curItem.afp || 0) + (curItem.isr || 0);
+    const neto = devengado - deducciones;
+
+    curItem.totalDevengado = Math.round(devengado * 100) / 100;
+    curItem.totalDeducciones = Math.round(deducciones * 100) / 100;
+    curItem.netoAPagar = Math.round(neto * 100) / 100;
+
     updatedItems[index] = curItem;
 
-    try {
-      const recalculated = await payrollApi.recalcularNomina(updatedItems);
-      setPreviewNominaData({
-        ...previewNominaData,
-        resumenTotales: recalculated.resumenTotales,
-        items: recalculated.items,
-      });
-    } catch {
-      setPreviewNominaData({
-        ...previewNominaData,
-        items: updatedItems,
-      });
-    }
+    const totDev = updatedItems.reduce((acc, i) => acc + (i.totalDevengado || 0), 0);
+    const totDed = updatedItems.reduce((acc, i) => acc + (i.totalDeducciones || 0), 0);
+    const totNet = updatedItems.reduce((acc, i) => acc + (i.netoAPagar || 0), 0);
+
+    setPreviewNominaData({
+      ...previewNominaData,
+      resumenTotales: {
+        totalDevengado: Math.round(totDev * 100) / 100,
+        totalDeducciones: Math.round(totDed * 100) / 100,
+        totalNeto: Math.round(totNet * 100) / 100,
+      },
+      items: updatedItems,
+    });
   };
 
   const handleConfirmSavePayroll = async (quincena?: string, mes?: number): Promise<boolean> => {

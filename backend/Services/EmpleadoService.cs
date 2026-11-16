@@ -1,22 +1,24 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using backend.Data;
 using backend.Models;
-using ClosedXML.Excel;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace backend.Services
 {
     public class EmpleadoService : IEmpleadoService
     {
         private readonly AppDbContext _db;
+        private readonly IMemoryCache _cache;
+        private const string CacheKeyTotales = "empleados_conteos_totales";
 
-        public EmpleadoService(AppDbContext db)
+        public EmpleadoService(AppDbContext db, IMemoryCache cache)
         {
             _db = db;
+            _cache = cache;
         }
 
         public async Task<EmpleadosConsultaResult> ObtenerEmpleadosAsync(string? search, string? status, int page = 1, int pageSize = 10)
@@ -41,17 +43,23 @@ namespace backend.Services
                 query = query.Where(e => e.EStatus == status);
             }
 
-            var conteosPorEstado = await _db.Empleados
-                .AsNoTracking()
-                .GroupBy(e => e.EStatus)
-                .Select(g => new { Status = g.Key, Count = g.Count() })
-                .ToListAsync();
+            if (!_cache.TryGetValue(CacheKeyTotales, out (int act, int inact, int tot) conteos))
+            {
+                var conteosPorEstado = await _db.Empleados
+                    .AsNoTracking()
+                    .GroupBy(e => e.EStatus)
+                    .Select(g => new { Status = g.Key, Count = g.Count() })
+                    .ToListAsync();
 
-            int totalActivos = conteosPorEstado.FirstOrDefault(x => x.Status == "ACTIVO")?.Count ?? 0;
-            int totalInactivos = conteosPorEstado.FirstOrDefault(x => x.Status == "INACTIVO")?.Count ?? 0;
-            int totalTotal = conteosPorEstado.Sum(x => x.Count);
+                int act = conteosPorEstado.FirstOrDefault(x => x.Status == "ACTIVO")?.Count ?? 0;
+                int inact = conteosPorEstado.FirstOrDefault(x => x.Status == "INACTIVO")?.Count ?? 0;
+                int tot = conteosPorEstado.Sum(x => x.Count);
+                conteos = (act, inact, tot);
+
+                _cache.Set(CacheKeyTotales, conteos, TimeSpan.FromSeconds(60));
+            }
+
             int totalFiltrados = await query.CountAsync();
-
             int size = pageSize > 0 ? pageSize : 10;
             int totalPages = (int)Math.Ceiling((double)totalFiltrados / size);
             if (totalPages == 0) totalPages = 1;
@@ -63,9 +71,9 @@ namespace backend.Services
                                   .ToListAsync();
 
             return new EmpleadosConsultaResult(
-                totalTotal, 
-                totalActivos, 
-                totalInactivos, 
+                conteos.tot, 
+                conteos.act, 
+                conteos.inact, 
                 totalFiltrados, 
                 currentPage, 
                 size, 
@@ -78,20 +86,7 @@ namespace backend.Services
         {
             if (string.IsNullOrWhiteSpace(nuevoEmpleado.Codigo))
             {
-                var codigos = await _db.Empleados
-                                      .AsNoTracking()
-                                      .Select(e => e.Codigo)
-                                      .ToListAsync();
-                int maxNum = 0;
-                foreach (var c in codigos)
-                {
-                    if (int.TryParse(c, out int val))
-                    {
-                        if (val > maxNum) maxNum = val;
-                    }
-                }
-                int siguiente = maxNum + 1;
-                nuevoEmpleado.Codigo = siguiente.ToString("D3");
+                nuevoEmpleado.Codigo = await ObtenerSiguienteCodigoSugeridoAsync();
             }
             else
             {
@@ -102,30 +97,18 @@ namespace backend.Services
                 }
             }
 
-            // VALIDACIÓN DE CÉDULA / PASAPORTE
-            if (!string.IsNullOrWhiteSpace(nuevoEmpleado.Cedula))
+            if (!ValidarYFormatearDocumento(nuevoEmpleado.Cedula, nuevoEmpleado.TipoDocumento, out var docFormateado, out var errorDoc))
             {
-                bool esPasaporte = nuevoEmpleado.TipoDocumento == "2";
-                bool esValido = esPasaporte 
-                    ? ValidadorDocumentoRD.ValidarPasaporte(nuevoEmpleado.Cedula)
-                    : ValidadorDocumentoRD.ValidarCedula(nuevoEmpleado.Cedula);
-
-                if (!esValido)
-                {
-                    return new EmpleadoOperacionResult(false, $"El {(esPasaporte ? "Pasaporte" : "número de Cédula de Identidad")} proporcionado no es válido.", null);
-                }
-
-                if (!esPasaporte)
-                {
-                    nuevoEmpleado.Cedula = FormateadorFormatoRD.FormatearCedula(nuevoEmpleado.Cedula);
-                }
+                return new EmpleadoOperacionResult(false, errorDoc, null);
             }
+            nuevoEmpleado.Cedula = docFormateado;
 
             nuevoEmpleado.FechaCreacion = DateTime.UtcNow;
             nuevoEmpleado.FechaActualizacion = DateTime.UtcNow;
 
             await _db.Empleados.AddAsync(nuevoEmpleado);
             await _db.SaveChangesAsync();
+            _cache.Remove(CacheKeyTotales);
 
             return new EmpleadoOperacionResult(true, null, nuevoEmpleado);
         }
@@ -138,24 +121,12 @@ namespace backend.Services
                 return new EmpleadoOperacionResult(false, $"No se encontró ningún empleado con el código '{codigo}'.", null);
             }
 
-            // VALIDACIÓN DE CÉDULA / PASAPORTE
-            if (!string.IsNullOrWhiteSpace(datosEditados.Cedula))
+            if (!ValidarYFormatearDocumento(datosEditados.Cedula, datosEditados.TipoDocumento, out var docFormateado, out var errorDoc))
             {
-                bool esPasaporte = datosEditados.TipoDocumento == "2";
-                bool esValido = esPasaporte 
-                    ? ValidadorDocumentoRD.ValidarPasaporte(datosEditados.Cedula)
-                    : ValidadorDocumentoRD.ValidarCedula(datosEditados.Cedula);
-
-                if (!esValido)
-                {
-                    return new EmpleadoOperacionResult(false, $"El {(esPasaporte ? "Pasaporte" : "número de Cédula de Identidad")} proporcionado no es válido.", null);
-                }
-
-                existente.Cedula = esPasaporte 
-                    ? datosEditados.Cedula.Trim().ToUpper() 
-                    : FormateadorFormatoRD.FormatearCedula(datosEditados.Cedula);
+                return new EmpleadoOperacionResult(false, errorDoc, null);
             }
 
+            existente.Cedula = docFormateado;
             existente.Nombres = datosEditados.Nombres;
             existente.TipoDocumento = datosEditados.TipoDocumento;
             existente.EStatus = string.IsNullOrWhiteSpace(datosEditados.EStatus) ? "ACTIVO" : datosEditados.EStatus;
@@ -166,6 +137,7 @@ namespace backend.Services
             existente.FechaActualizacion = DateTime.UtcNow;
 
             await _db.SaveChangesAsync();
+            _cache.Remove(CacheKeyTotales);
 
             return new EmpleadoOperacionResult(true, null, existente);
         }
@@ -179,11 +151,7 @@ namespace backend.Services
             {
                 if (string.IsNullOrWhiteSpace(emp.Codigo)) continue;
                 var existente = await _db.Empleados.FindAsync(emp.Codigo);
-                
-                bool esPasaporte = emp.TipoDocumento == "2";
-                string docFormateado = (!string.IsNullOrWhiteSpace(emp.Cedula) && !esPasaporte)
-                    ? FormateadorFormatoRD.FormatearCedula(emp.Cedula)
-                    : emp.Cedula ?? string.Empty;
+                ValidarYFormatearDocumento(emp.Cedula, emp.TipoDocumento, out var docFormateado, out _);
 
                 if (existente != null)
                 {
@@ -208,6 +176,7 @@ namespace backend.Services
                 procesados++;
             }
             await _db.SaveChangesAsync();
+            _cache.Remove(CacheKeyTotales);
             return procesados;
         }
 
@@ -218,6 +187,7 @@ namespace backend.Services
 
             _db.Empleados.Remove(existente);
             await _db.SaveChangesAsync();
+            _cache.Remove(CacheKeyTotales);
             return true;
         }
 
@@ -226,10 +196,15 @@ namespace backend.Services
             if (string.IsNullOrWhiteSpace(nuevoEstatus)) return 0;
 
             string estatusNormalizado = nuevoEstatus.ToUpperInvariant().Trim();
-            return await _db.Empleados
+            int afectados = await _db.Empleados
                 .ExecuteUpdateAsync(s => s
                     .SetProperty(e => e.EStatus, estatusNormalizado)
                     .SetProperty(e => e.FechaActualizacion, DateTime.UtcNow));
+            if (afectados > 0)
+            {
+                _cache.Remove(CacheKeyTotales);
+            }
+            return afectados;
         }
 
         public async Task<string> ObtenerSiguienteCodigoSugeridoAsync()
@@ -241,13 +216,35 @@ namespace backend.Services
             int maxNum = 0;
             foreach (var c in codigos)
             {
-                if (int.TryParse(c, out int val))
+                if (int.TryParse(c, out int val) && val > maxNum)
                 {
-                    if (val > maxNum) maxNum = val;
+                    maxNum = val;
                 }
             }
-            int siguiente = maxNum + 1;
-            return siguiente.ToString("D3");
+            return (maxNum + 1).ToString("D3");
+        }
+
+        private static bool ValidarYFormatearDocumento(string? cedula, string? tipoDocumento, out string? docFormateado, out string? error)
+        {
+            docFormateado = null;
+            error = null;
+            if (string.IsNullOrWhiteSpace(cedula)) return true;
+
+            bool esPasaporte = tipoDocumento == "2";
+            bool esValido = esPasaporte 
+                ? ValidadorDocumentoRD.ValidarPasaporte(cedula)
+                : ValidadorDocumentoRD.ValidarCedula(cedula);
+
+            if (!esValido)
+            {
+                error = $"El {(esPasaporte ? "Pasaporte" : "número de Cédula de Identidad")} proporcionado no es válido.";
+                return false;
+            }
+
+            docFormateado = esPasaporte 
+                ? cedula.Trim().ToUpper() 
+                : FormateadorFormatoRD.FormatearCedula(cedula);
+            return true;
         }
     }
 }

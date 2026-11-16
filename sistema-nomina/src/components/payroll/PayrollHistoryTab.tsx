@@ -1,14 +1,17 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import axios from 'axios';
 import { NominaItem } from '../../types/nomina';
 import { PayrollHistoryDetail } from './PayrollHistoryDetail';
-import { PDFPaystubModal } from './PDFPaystubModal';
 import { FormSelect } from '../common/FormSelect';
 import { SearchInput } from '../common/SearchInput';
 import { PayrollHistorySummaryTable } from './PayrollHistorySummaryTable';
 import { PayrollHistorySearchResultsTable } from './PayrollHistorySearchResultsTable';
 import { Calendar, Filter, Layers, RefreshCw } from 'lucide-react';
 import { ENDPOINTS } from '../../config/api';
+
+const PDFPaystubModal = lazy(() =>
+  import('./PDFPaystubModal').then((m) => ({ default: m.PDFPaystubModal }))
+);
 
 interface PayrollHistoryTabProps {
   isActive: boolean;
@@ -162,12 +165,16 @@ export const PayrollHistoryTab: React.FC<PayrollHistoryTabProps> = ({ isActive }
         </>
       )}
 
-      <PDFPaystubModal
-        isOpen={selectedPdfItem !== null}
-        onClose={() => setSelectedPdfItem(null)}
-        item={selectedPdfItem}
-        conceptoPeriodo={selectedPeriod?.concepto}
-      />
+      {selectedPdfItem !== null && (
+        <Suspense fallback={null}>
+          <PDFPaystubModal
+            isOpen={selectedPdfItem !== null}
+            onClose={() => setSelectedPdfItem(null)}
+            item={selectedPdfItem}
+            conceptoPeriodo={selectedPeriod?.concepto}
+          />
+        </Suspense>
+      )}
     </div>
   );
 };

@@ -43,7 +43,16 @@ namespace backend.Application.Features.Nomina.Queries
                 return Results.BadRequest(new { mensaje = "No se encontraron registros de nómina válidos en el archivo Excel." });
             }
 
-            var listaEmpleados = await _db.Empleados.AsNoTracking().ToListAsync();
+            var codigosEnExcel = itemsNomina
+                .Select(i => i.CodigoEmpleado.Trim())
+                .Where(c => !string.IsNullOrEmpty(c))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            var listaEmpleados = await _db.Empleados
+                .AsNoTracking()
+                .Where(e => codigosEnExcel.Contains(e.Codigo))
+                .ToListAsync();
             var empleadosMap = listaEmpleados.ToDictionary(e => e.Codigo.Trim(), StringComparer.OrdinalIgnoreCase);
 
             int codigosNoEncontrados = 0;

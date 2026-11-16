@@ -30,6 +30,12 @@ namespace backend.Data
             modelBuilder.Entity<Empleado>()
                 .HasKey(e => e.Codigo);
 
+            modelBuilder.Entity<Empleado>()
+                .HasIndex(e => e.EStatus);
+
+            modelBuilder.Entity<Empleado>()
+                .HasIndex(e => e.Cedula);
+
             modelBuilder.Entity<Usuario>()
                 .HasIndex(u => u.Email)
                 .IsUnique();
@@ -43,6 +49,12 @@ namespace backend.Data
                 .WithOne(d => d.NominaPeriodo)
                 .HasForeignKey(d => d.NominaPeriodoId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<NominaPeriodo>()
+                .HasIndex(p => new { p.Anio, p.Mes, p.Quincena });
+
+            modelBuilder.Entity<NominaDetalle>()
+                .HasIndex(d => d.CodigoEmpleado);
             
             modelBuilder.Entity<AuditoriaAccion>()
                 .HasIndex(a => a.UsuarioId);

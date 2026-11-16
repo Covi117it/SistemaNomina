@@ -17,8 +17,6 @@ namespace backend.Services.Pdf
         private const string AccentGreen = "#1E6B34";
         private const string LightCardBg = "#F4F7F4";
         private const string LightBorder = "#D1DDD2";
-        private const string DeductionBg = "#FEE2E2";
-        private const string DeductionText = "#B91C1C";
         private const string TextDark = "#1F2937";
 
         // Íconos SVG vectoriales compatibles con Linux / CachyOS (sin dependencias de fuentes emoji)
@@ -28,6 +26,7 @@ namespace backend.Services.Pdf
 
         public VolantePagoDocument(NominaDetalle detalle, string conceptoPeriodo)
         {
+            PdfService.EnsureFontsRegistered();
             _detalle = detalle;
             _conceptoPeriodo = conceptoPeriodo;
         }
@@ -43,7 +42,7 @@ namespace backend.Services.Pdf
                 page.Size(PageSizes.A5.Landscape());
                 page.Margin(16);
                 page.PageColor(Colors.White);
-                page.DefaultTextStyle(x => x.FontSize(8.5f).FontFamily("Arial").FontColor(TextDark));
+                page.DefaultTextStyle(x => x.FontSize(9f).FontFamily("Roboto").FontColor(TextDark));
 
                 page.Content().Column(col =>
                 {
@@ -101,36 +100,38 @@ namespace backend.Services.Pdf
         }
 
         private void ComposeEmployeeCard(ColumnDescriptor col)
-{
-    col.Item()
-       .Background(LightCardBg)
-       .CornerRadius(8)
-       .PaddingVertical(8)
-       .PaddingHorizontal(14)
-       .Row(row =>
-       {
-           row.ConstantItem(32).AlignCenter().AlignMiddle().Container()
-              .Width(28).Height(28)
-              .Background("#E1EAE2")
-              .CornerRadius(14)
-              .AlignCenter().AlignMiddle()
-              .Padding(5)
-              .Svg(UserSvg);
-           row.RelativeItem().PaddingLeft(10).Column(c =>
-           {
-               c.Item().Text(t =>
+        {
+            col.Item()
+               .Background(LightCardBg)
+               .Border(1)
+               .BorderColor(LightBorder)
+               .CornerRadius(6)
+               .PaddingVertical(8)
+               .PaddingHorizontal(14)
+               .Row(row =>
                {
-                   t.Span("NOMBRE EMPLEADO: ").Bold().FontSize(8.5f).FontColor(TextDark);
-                   t.Span($"{_detalle.CodigoEmpleado} - {_detalle.NombreEmpleadoSnapshot.ToUpper()}").Bold().FontSize(8.5f).FontColor(TextDark);
+                   row.ConstantItem(32).AlignCenter().AlignMiddle().Container()
+                      .Width(28).Height(28)
+                      .Background("#E1EAE2")
+                      .CornerRadius(14)
+                      .AlignCenter().AlignMiddle()
+                      .Padding(5)
+                      .Svg(UserSvg);
+                   row.RelativeItem().PaddingLeft(10).Column(c =>
+                   {
+                       c.Item().Text(t =>
+                       {
+                           t.Span("NOMBRE EMPLEADO: ").Bold().FontSize(8.5f).FontColor(TextDark);
+                           t.Span($"{_detalle.CodigoEmpleado} - {_detalle.NombreEmpleadoSnapshot.ToUpper()}").Bold().FontSize(8.5f).FontColor(TextDark);
+                       });
+                       c.Item().PaddingTop(2).Text(t =>
+                       {
+                           t.Span("PERIODO DE PAGO: ").Bold().FontSize(8.5f).FontColor(TextDark);
+                           t.Span(_conceptoPeriodo.ToUpper()).Bold().FontSize(8.5f).FontColor(TextDark);
+                       });
+                   });
                });
-               c.Item().PaddingTop(2).Text(t =>
-               {
-                   t.Span("PERIODO DE PAGO: ").Bold().FontSize(8.5f).FontColor(TextDark);
-                   t.Span(_conceptoPeriodo.ToUpper()).Bold().FontSize(8.5f).FontColor(TextDark);
-               });
-           });
-       });
-}
+        }
 
         [Obsolete]
         private void ComposeMainTables(ColumnDescriptor col)
@@ -167,23 +168,23 @@ namespace backend.Services.Pdf
 
                     devCol.Item().PaddingTop(6);
 
-                    devCol.Item().Row(r => { r.RelativeItem().Text("SUELDO QUINCENAL"); r.ConstantItem(85).AlignRight().Text(PdfHelpers.FormatearMonto(sueldoMostrar)); });
-                    devCol.Item().PaddingTop(3).Row(r => { r.RelativeItem().Text("EXTRAS"); r.ConstantItem(85).AlignRight().Text(PdfHelpers.FormatearMonto(_detalle.HorasExtras)); });
-                    devCol.Item().PaddingTop(3).Row(r => { r.RelativeItem().Text("COMISIONES"); r.ConstantItem(85).AlignRight().Text(PdfHelpers.FormatearMonto(_detalle.Incentivo)); });
-                    devCol.Item().PaddingTop(3).Row(r => { r.RelativeItem().Text("OTROS"); r.ConstantItem(85).AlignRight().Text(PdfHelpers.FormatearMonto(_detalle.Reembolso)); });
+                    devCol.Item().Row(r => { r.RelativeItem().Text("SUELDO QUINCENAL").FontSize(8.5f); r.ConstantItem(90).AlignRight().Text(PdfHelpers.FormatearMonto(sueldoMostrar)).FontSize(9.5f).FontColor(TextDark); });
+                    devCol.Item().PaddingTop(3).Row(r => { r.RelativeItem().Text("EXTRAS").FontSize(8.5f); r.ConstantItem(90).AlignRight().Text(PdfHelpers.FormatearMonto(_detalle.HorasExtras)).FontSize(9.5f).FontColor(TextDark); });
+                    devCol.Item().PaddingTop(3).Row(r => { r.RelativeItem().Text("COMISIONES").FontSize(8.5f); r.ConstantItem(90).AlignRight().Text(PdfHelpers.FormatearMonto(_detalle.Incentivo)).FontSize(9.5f).FontColor(TextDark); });
+                    devCol.Item().PaddingTop(3).Row(r => { r.RelativeItem().Text("OTROS").FontSize(8.5f); r.ConstantItem(90).AlignRight().Text(PdfHelpers.FormatearMonto(_detalle.Reembolso)).FontSize(9.5f).FontColor(TextDark); });
 
                     devCol.Item().PaddingTop(12).Row(r =>
                     {
-                        r.RelativeItem().AlignMiddle().Text("TOTAL DEVENGADO").Bold().FontSize(9f).FontColor(PrimaryGreen);
-                        r.ConstantItem(90)
+                        r.RelativeItem().AlignMiddle().Text("TOTAL DEVENGADO").Bold().FontSize(9.5f).FontColor(PrimaryGreen);
+                        r.ConstantItem(100)
                          .Background(AccentGreen)
-                         .CornerRadius(4)
-                         .PaddingVertical(3)
+                         .CornerRadius(5)
+                         .PaddingVertical(4)
                          .PaddingHorizontal(8)
                          .AlignRight()
                          .Text(PdfHelpers.FormatearMonto(devengadoMostrar))
                          .Bold()
-                         .FontSize(9f)
+                         .FontSize(11.5f)
                          .FontColor(Colors.White);
                     });
 
@@ -212,40 +213,42 @@ namespace backend.Services.Pdf
 
                     dedCol.Item().PaddingTop(6);
 
-                    dedCol.Item().Row(r => { r.RelativeItem().Text("SFS"); r.ConstantItem(85).AlignRight().Text(PdfHelpers.FormatearMonto(_detalle.Sfs)); });
-                    dedCol.Item().PaddingTop(3).Row(r => { r.RelativeItem().Text("AFP"); r.ConstantItem(85).AlignRight().Text(PdfHelpers.FormatearMonto(_detalle.Afp)); });
-                    dedCol.Item().PaddingTop(3).Row(r => { r.RelativeItem().Text("ISR"); r.ConstantItem(85).AlignRight().Text(PdfHelpers.FormatearMonto(_detalle.Isr)); });
-                    dedCol.Item().PaddingTop(3).Row(r => { r.RelativeItem().Text("SEGURO MÉDICO"); r.ConstantItem(85).AlignRight().Text(PdfHelpers.FormatearMonto(_detalle.SeguroMedico)); });
-                    dedCol.Item().PaddingTop(3).Row(r => { r.RelativeItem().Text("CTA X COBRAR"); r.ConstantItem(85).AlignRight().Text(PdfHelpers.FormatearMonto(_detalle.Prestamo + _detalle.SeguroVehiculo)); });
-                    dedCol.Item().PaddingTop(3).Row(r => { r.RelativeItem().Text("Otros: Cumpleaños"); r.ConstantItem(85).AlignRight().Text(PdfHelpers.FormatearMonto(_detalle.CuotaCumpleanos)); });
+                    dedCol.Item().Row(r => { r.RelativeItem().Text("SFS").FontSize(8.5f); r.ConstantItem(90).AlignRight().Text(PdfHelpers.FormatearMonto(_detalle.Sfs)).FontSize(9.5f).FontColor(TextDark); });
+                    dedCol.Item().PaddingTop(3).Row(r => { r.RelativeItem().Text("AFP").FontSize(8.5f); r.ConstantItem(90).AlignRight().Text(PdfHelpers.FormatearMonto(_detalle.Afp)).FontSize(9.5f).FontColor(TextDark); });
+                    dedCol.Item().PaddingTop(3).Row(r => { r.RelativeItem().Text("ISR").FontSize(8.5f); r.ConstantItem(90).AlignRight().Text(PdfHelpers.FormatearMonto(_detalle.Isr)).FontSize(9.5f).FontColor(TextDark); });
+                    dedCol.Item().PaddingTop(3).Row(r => { r.RelativeItem().Text("SEGURO MÉDICO").FontSize(8.5f); r.ConstantItem(90).AlignRight().Text(PdfHelpers.FormatearMonto(_detalle.SeguroMedico)).FontSize(9.5f).FontColor(TextDark); });
+                    dedCol.Item().PaddingTop(3).Row(r => { r.RelativeItem().Text("CTA X COBRAR").FontSize(8.5f); r.ConstantItem(90).AlignRight().Text(PdfHelpers.FormatearMonto(_detalle.Prestamo + _detalle.SeguroVehiculo)).FontSize(9.5f).FontColor(TextDark); });
+                    dedCol.Item().PaddingTop(3).Row(r => { r.RelativeItem().Text("Otros: Cumpleaños").FontSize(8.5f); r.ConstantItem(90).AlignRight().Text(PdfHelpers.FormatearMonto(_detalle.CuotaCumpleanos)).FontSize(9.5f).FontColor(TextDark); });
 
                     dedCol.Item().PaddingTop(8).Row(r =>
                     {
-                        r.RelativeItem().AlignMiddle().Text("TOTAL DEDUCCIONES").Bold().FontSize(9f).FontColor(TextDark);
-                        r.ConstantItem(90)
-                         .Background(DeductionBg)
-                         .CornerRadius(4)
-                         .PaddingVertical(3)
+                        r.RelativeItem().AlignMiddle().Text("TOTAL DEDUCCIONES").Bold().FontSize(9.5f).FontColor(TextDark);
+                        r.ConstantItem(100)
+                         .Background(LightCardBg)
+                         .Border(1)
+                         .BorderColor(LightBorder)
+                         .CornerRadius(5)
+                         .PaddingVertical(4)
                          .PaddingHorizontal(8)
                          .AlignRight()
                          .Text(PdfHelpers.FormatearMonto(_detalle.TotalDeducciones))
                          .Bold()
-                         .FontSize(9f)
-                         .FontColor(DeductionText);
+                         .FontSize(10.5f)
+                         .FontColor(TextDark);
                     });
 
                     dedCol.Item().PaddingTop(6).Row(r =>
                     {
-                        r.RelativeItem().AlignMiddle().Text("NETO PAGADO").Bold().FontSize(9.5f).FontColor(PrimaryGreen);
-                        r.ConstantItem(90)
+                        r.RelativeItem().AlignMiddle().Text("NETO PAGADO").Bold().FontSize(10f).FontColor(PrimaryGreen);
+                        r.ConstantItem(100)
                          .Background(AccentGreen)
-                         .CornerRadius(4)
-                         .PaddingVertical(3)
+                         .CornerRadius(5)
+                         .PaddingVertical(4)
                          .PaddingHorizontal(8)
                          .AlignRight()
                          .Text(PdfHelpers.FormatearMonto(_detalle.NetoPagado))
                          .Bold()
-                         .FontSize(9.5f)
+                         .FontSize(12f)
                          .FontColor(Colors.White);
                     });
                 });

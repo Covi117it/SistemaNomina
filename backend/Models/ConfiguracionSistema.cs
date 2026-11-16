@@ -16,7 +16,7 @@ namespace backend.Models
         public string SmtpSenderEmail { get; set; } = "";
 
         [StringLength(150)]
-        public string SmtpSenderName { get; set; } = "Nómina Enfoco Institucional";
+        public string SmtpSenderName { get; set; } = "Enfoco Nómina";
 
         [StringLength(150)]
         public string SmtpUsername { get; set; } = "";

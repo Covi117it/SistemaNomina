@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, lazy, Suspense } from 'react';
 import { NominaItem } from '../types/nomina';
 import { PageHeader } from '../components/common/PageHeader';
 import { StatCard } from '../components/common/StatCard';
 import { DistributionTable } from '../components/payroll/DistributionTable';
 import { SmtpConfigModal } from '../components/payroll/SmtpConfigModal';
-import { PDFPaystubModal } from '../components/payroll/PDFPaystubModal';
 import { SearchInput } from '../components/common/SearchInput';
 import { FormSelect } from '../components/common/FormSelect';
 import { PillFilterGroup } from '../components/common/PillFilterGroup';
@@ -13,6 +12,10 @@ import { Mail, Send, FileText, CheckCircle2, Settings, Loader2, Calendar } from 
 import { ActionsDropdown } from '../components/common/ActionsDropdown';
 import { useDistributionPdf } from '../hooks/useDistributionPdf';
 import { useAuthorization } from '../hooks/useAuthorization';
+
+const PDFPaystubModal = lazy(() =>
+  import('../components/payroll/PDFPaystubModal').then((m) => ({ default: m.PDFPaystubModal }))
+);
 
 interface DistributionPdfPageProps {
   items?: NominaItem[];
@@ -219,12 +222,16 @@ export const DistributionPdfPage: React.FC<DistributionPdfPageProps> = ({
         </>
       )}
 
-      <PDFPaystubModal
-        isOpen={!!selectedPdfItem}
-        onClose={() => setSelectedPdfItem(null)}
-        item={selectedPdfItem}
-        conceptoPeriodo={periodoNombre || conceptoPeriodo}
-      />
+      {selectedPdfItem && (
+        <Suspense fallback={null}>
+          <PDFPaystubModal
+            isOpen={!!selectedPdfItem}
+            onClose={() => setSelectedPdfItem(null)}
+            item={selectedPdfItem}
+            conceptoPeriodo={periodoNombre || conceptoPeriodo}
+          />
+        </Suspense>
+      )}
 
       <SmtpConfigModal
         isOpen={showSmtpModal}
